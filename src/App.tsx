@@ -4,6 +4,7 @@ import { INITIAL_APPOINTMENTS } from './data/mockData';
 import { LoginScreen } from './components/LoginScreen';
 import { RegisterScreen } from './components/RegisterScreen';
 import { DashboardScreen } from './components/DashboardScreen';
+import { AdminOfferScreen } from './admin/AdminOfferScreen';
 import { BookAppointmentModal } from './components/BookAppointmentModal';
 import { AppointmentDetailModal } from './components/AppointmentDetailModal';
 import { CheckCircle2 } from 'lucide-react';
@@ -133,13 +134,17 @@ export default function App() {
       )}
 
       {currentScreen === 'dashboard' && currentUser && (
-        <DashboardScreen
-          user={currentUser}
-          appointments={appointments}
-          onOpenBooking={() => setIsBookingOpen(true)}
-          onOpenDetail={(apt) => setSelectedAppointment(apt)}
-          onLogout={handleLogout}
-        />
+        currentUser.roles?.includes('ADMIN') ? (
+          <AdminOfferScreen user={currentUser} onLogout={handleLogout} />
+        ) : (
+          <DashboardScreen
+            user={currentUser}
+            appointments={appointments}
+            onOpenBooking={() => setIsBookingOpen(true)}
+            onOpenDetail={(apt) => setSelectedAppointment(apt)}
+            onLogout={handleLogout}
+          />
+        )
       )}
 
       {/* Booking Modal */}
