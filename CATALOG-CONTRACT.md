@@ -15,3 +15,9 @@ Todos los recursos requieren un access JWT válido y devuelven JSON (HTTP 200):
 No hay operaciones de escritura para estos catálogos. Un intento de `POST`, `PUT`, `PATCH` o `DELETE` no forma parte del contrato y debe tratarse como operación no soportada.
 
 La integración visual queda pendiente de las HU de agenda que consuman cada catálogo; mientras tanto las pantallas del prototipo mantienen sus datos sintéticos aprobados.
+
+## Planes para el registro opcional
+
+`GET /api/v1/catalogs/insurance-plans` es público porque se consulta antes del login. Devuelve únicamente planes activos con sus referencias de EPS y régimen para presentación; no permite operaciones de escritura.
+
+El formulario de registro puede enviar `insurancePlanId` como entero positivo. El campo es opcional: si se omite, la cuenta se crea sin afiliación. Si el plan no existe o está inactivo, la API responde `400` y no crea la cuenta. La afiliación inicial no solicita número de afiliación; ese dato queda para la gestión posterior de HU-011.

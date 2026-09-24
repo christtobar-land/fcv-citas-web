@@ -4,14 +4,27 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { LoginScreen } from './LoginScreen';
 import { RegisterScreen } from './RegisterScreen';
 import * as auth from '../auth/authApi';
+import * as catalogs from '../catalogs/catalogsApi';
 
 vi.mock('../auth/authApi', async (original) => {
   const actual = await original<typeof import('../auth/authApi')>();
   return { ...actual, login: vi.fn(), register: vi.fn() };
 });
 
+vi.mock('../catalogs/catalogsApi', async (original) => {
+  const actual = await original<typeof import('../catalogs/catalogsApi')>();
+  return { ...actual, getInsurancePlans: vi.fn() };
+});
+
 describe('pantallas de autenticación', () => {
-  beforeEach(() => vi.clearAllMocks());
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.mocked(catalogs.getInsurancePlans).mockResolvedValue([{
+      id: 1, epsId: 1, epsCode: 'EPS_DEMO_A', epsName: 'EPS Demo Salud',
+      regimeId: 1, regimeCode: 'CONTRIBUTIVO', regimeName: 'Contributivo',
+      code: 'A-CONTRIB', name: 'Plan Contributivo Demo',
+    }]);
+  });
 
   it('envía las credenciales y muestra el resultado de un login válido', async () => {
     const user = userEvent.setup();
@@ -60,5 +73,22 @@ describe('pantallas de autenticación', () => {
       email: 'ana@example.com', phone: '3001234567', password: 'Password123*',
     }));
     expect(onSuccess).toHaveBeenCalledWith(account);
+  });
+
+  it('permite asociar opcionalmente un plan activo durante el registro', async () => {
+    const user = userEvent.setup();
+    vi.mocked(auth.register).mockResolvedValue({ id: '3', name: 'Ana Ruiz', email: 'ana@example.com', roles: ['USER'] });
+    render(<RegisterScreen onRegisterSuccess={vi.fn()} onNavigateLogin={vi.fn()} />);
+
+    await user.type(screen.getByLabelText(/nombres/i), 'Ana');
+    await user.type(screen.getByLabelText(/apellidos/i), 'Ruiz');
+    await user.type(screen.getByLabelText(/correo electrónico/i), 'ana@example.com');
+    await user.type(screen.getByLabelText(/teléfono móvil/i), '3001234567');
+    await user.type(screen.getByLabelText(/número de documento/i), '123456');
+    await user.type(screen.getByLabelText(/^contraseña/i), 'Password123*');
+    await user.selectOptions(screen.getByLabelText(/plan de salud/i), '1');
+    await user.click(screen.getByRole('button', { name: /registrarme y acceder/i }));
+
+    expect(auth.register).toHaveBeenCalledWith(expect.objectContaining({ insurancePlanId: 1 }));
   });
 });

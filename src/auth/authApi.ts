@@ -15,6 +15,7 @@ export interface Registration {
   email: string;
   phone: string;
   password: string;
+  insurancePlanId?: number;
 }
 
 interface RegistrationResponse extends Omit<Registration, 'password'> {

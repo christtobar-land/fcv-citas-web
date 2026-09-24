@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { User as UserIcon, Mail, Phone, Lock, Eye, EyeOff, FileText, ShieldCheck, ArrowLeft } from 'lucide-react';
 import { User } from '../types';
 import { authErrorMessage, register } from '../auth/authApi';
+import { getInsurancePlans, type InsurancePlan } from '../catalogs/catalogsApi';
 
 interface RegisterScreenProps {
   onRegisterSuccess: (user: User) => void;
@@ -19,10 +20,23 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
+  const [insurancePlanId, setInsurancePlanId] = useState('');
+  const [insurancePlans, setInsurancePlans] = useState<InsurancePlan[]>([]);
+  const [plansLoading, setPlansLoading] = useState(true);
+  const [plansError, setPlansError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [acceptTerms, setAcceptTerms] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
+
+  useEffect(() => {
+    let mounted = true;
+    getInsurancePlans()
+      .then((plans) => { if (mounted) setInsurancePlans(plans); })
+      .catch(() => { if (mounted) setPlansError('Los planes no están disponibles ahora; puedes continuar sin afiliación.'); })
+      .finally(() => { if (mounted) setPlansLoading(false); });
+    return () => { mounted = false; };
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -46,6 +60,7 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({
         email,
         phone,
         password,
+        ...(insurancePlanId ? { insurancePlanId: Number(insurancePlanId) } : {}),
       });
       onRegisterSuccess(user);
     } catch (error) {
@@ -335,6 +350,26 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({
                     {showPassword ? <EyeOff className="h-4 w-4" strokeWidth={1.8} /> : <Eye className="h-4 w-4" strokeWidth={1.8} />}
                   </button>
                 </div>
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-semibold text-slate-700 uppercase tracking-wider mb-1.5" htmlFor="reg-insurance-plan">
+                  Plan de salud <span className="normal-case font-normal text-slate-400">(opcional)</span>
+                </label>
+                <select
+                  className="input-transition block w-full px-3 py-2.5 bg-white border border-slate-200 rounded-xl text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 disabled:bg-slate-50 disabled:text-slate-400"
+                  id="reg-insurance-plan"
+                  value={insurancePlanId}
+                  onChange={(e) => setInsurancePlanId(e.target.value)}
+                  disabled={plansLoading || insurancePlans.length === 0}
+                >
+                  <option value="">Sin afiliación por ahora</option>
+                  {insurancePlans.map((plan) => (
+                    <option key={plan.id} value={plan.id}>{plan.epsName} · {plan.name}</option>
+                  ))}
+                </select>
+                {plansLoading && <p className="mt-1 text-[11px] text-slate-400">Cargando planes disponibles…</p>}
+                {plansError && <p className="mt-1 text-[11px] text-amber-600" role="status">{plansError}</p>}
               </div>
 
               {/* Consent checkbox */}
