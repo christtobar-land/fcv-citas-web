@@ -6,7 +6,8 @@ export interface Specialty { id: number; code: string; name: string; appointment
 export interface Location { id: number; code: string; name: string; active: boolean; }
 export interface AvailabilityBlock { id: number; professionalId: number; locationId: number; date: string; startTime: string; endTime: string; }
 export interface AvailabilityOption { professionalId: number; locationId: number; specialtyId: number; startAt: string; endAt: string; durationMinutes: number; general: boolean; }
-export interface Appointment { id: number; patientUserId: number; professionalId: number; locationId: number; specialtyId: number; status: 'APPROVED' | 'REQUESTED' | 'REJECTED'; startAt: string; endAt: string; reason?: string | null; }
+export interface Appointment { id: number; patientUserId: number; professionalId: number; locationId: number; specialtyId: number; status: 'APPROVED' | 'REQUESTED' | 'REJECTED' | 'CANCELLED' | 'COMPLETED' | 'NO_SHOW'; startAt: string; endAt: string; reason?: string | null; locationName: string; specialtyName: string; professionalName: string; }
+export interface AppointmentHistory { appointmentId: number; status: Appointment['status']; actorUserId: number | null; source: 'USER' | 'ADMIN' | 'SYSTEM'; reason: string | null; changedAt: string; }
 
 export class SchedulingApiError extends Error { constructor(public readonly status: number, message: string) { super(message); this.name = 'SchedulingApiError'; } }
 
@@ -24,9 +25,14 @@ export const getSpecialties = () => request<Specialty[]>('/api/v1/catalogs/speci
 export const getLocations = () => request<Location[]>('/api/v1/catalogs/locations');
 export const getAvailability = (locationId: number, specialtyId: number, date: string, professionalId?: number) => { const query = new URLSearchParams({ locationId: String(locationId), specialtyId: String(specialtyId), date }); if (professionalId) query.set('professionalId', String(professionalId)); return request<AvailabilityOption[]>(`/api/v1/availability?${query}`); };
 export const reserveAppointment = (input: { professionalId: number; locationId: number; specialtyId: number; startAt: string; reason?: string }) => request<Appointment>('/api/v1/appointments', { method: 'POST', body: JSON.stringify(input) });
+export const getMyAppointments = (status?: string, date?: string) => { const query = new URLSearchParams(); if (status) query.set('status', status); if (date) query.set('date', date); return request<Appointment[]>(`/api/v1/appointments${query.size ? `?${query}` : ''}`); };
+export const cancelAppointment = (id: number) => request<Appointment>(`/api/v1/appointments/${id}/cancel`, { method: 'POST' });
+export const getAppointmentHistory = (id: number) => request<AppointmentHistory[]>(`/api/v1/appointments/${id}/history`);
 export const getOwnBlocks = (date: string, locationId?: number) => { const query = new URLSearchParams({ date }); if (locationId) query.set('locationId', String(locationId)); return request<AvailabilityBlock[]>(`/api/v1/professional/availability-blocks?${query}`); };
 export const createBlock = (input: { locationId: number; date: string; startTime: string; endTime: string }) => request<AvailabilityBlock>('/api/v1/professional/availability-blocks', { method: 'POST', body: JSON.stringify(input) });
 export const updateBlock = (id: number, input: { locationId: number; date: string; startTime: string; endTime: string }) => request<AvailabilityBlock>(`/api/v1/professional/availability-blocks/${id}`, { method: 'PATCH', body: JSON.stringify(input) });
 export const deleteBlock = (id: number) => request<void>(`/api/v1/professional/availability-blocks/${id}`, { method: 'DELETE' });
+export const getProfessionalAppointments = (date?: string, locationId?: number) => { const query = new URLSearchParams(); if (date) query.set('date', date); if (locationId) query.set('locationId', String(locationId)); return request<Appointment[]>(`/api/v1/professional/appointments${query.size ? `?${query}` : ''}`); };
+export const closeProfessionalAppointment = (id: number, outcome: 'COMPLETED' | 'NO_SHOW') => request<Appointment>(`/api/v1/professional/appointments/${id}/close`, { method: 'POST', body: JSON.stringify({ outcome }) });
 export const getRequestedAppointments = () => request<Appointment[]>('/api/v1/admin/appointments');
 export const decideAppointment = (id: number, decision: 'APPROVE' | 'REJECT', reason?: string) => request<Appointment>(`/api/v1/admin/appointments/${id}/decision`, { method: 'POST', body: JSON.stringify({ decision, reason }) });
