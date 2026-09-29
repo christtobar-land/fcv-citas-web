@@ -1,12 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { ScreenType, User, Appointment } from './types';
-import { INITIAL_APPOINTMENTS } from './data/mockData';
+import { ScreenType, User } from './types';
 import { LoginScreen } from './components/LoginScreen';
 import { RegisterScreen } from './components/RegisterScreen';
-import { DashboardScreen } from './components/DashboardScreen';
 import { AdminOfferScreen } from './admin/AdminOfferScreen';
-import { BookAppointmentModal } from './components/BookAppointmentModal';
-import { AppointmentDetailModal } from './components/AppointmentDetailModal';
+import { UserBookingScreen } from './scheduling/UserBookingScreen';
+import { ProfessionalScheduleScreen } from './scheduling/ProfessionalScheduleScreen';
 import { CheckCircle2 } from 'lucide-react';
 import { logout, restoreSession } from './auth/authApi';
 
@@ -15,19 +13,7 @@ export default function App() {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [isRestoringSession, setIsRestoringSession] = useState(true);
 
-  const [appointments, setAppointments] = useState<Appointment[]>(() => {
-    const saved = localStorage.getItem('portal_citas_appointments');
-    return saved ? JSON.parse(saved) : INITIAL_APPOINTMENTS;
-  });
-
-  const [isBookingOpen, setIsBookingOpen] = useState(false);
-  const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
-
-  // Sync state to localStorage
-  useEffect(() => {
-    localStorage.setItem('portal_citas_appointments', JSON.stringify(appointments));
-  }, [appointments]);
 
   useEffect(() => {
     let active = true;
@@ -72,24 +58,6 @@ export default function App() {
     }
   };
 
-  const handleBookAppointment = (newApt: Appointment) => {
-    setAppointments((prev) => [newApt, ...prev]);
-    showToast(`Cita confirmada con ${newApt.doctorName} para el ${newApt.date}.`);
-  };
-
-  const handleCancelAppointment = (id: string) => {
-    setAppointments((prev) =>
-      prev.map((apt) => (apt.id === id ? { ...apt, status: 'cancelada' } : apt))
-    );
-    showToast('La cita médica ha sido cancelada.');
-  };
-
-  const handleRescheduleAppointment = (id: string, newDate: string, newTime: string) => {
-    setAppointments((prev) =>
-      prev.map((apt) => (apt.id === id ? { ...apt, date: newDate, time: newTime } : apt))
-    );
-    showToast(`Cita reprogramada con éxito para el ${newDate} a las ${newTime}.`);
-  };
 
   if (isRestoringSession) {
     return (
@@ -136,33 +104,12 @@ export default function App() {
       {currentScreen === 'dashboard' && currentUser && (
         currentUser.roles?.includes('ADMIN') ? (
           <AdminOfferScreen user={currentUser} onLogout={handleLogout} />
+        ) : currentUser.roles?.includes('PROFESSIONAL') ? (
+          <ProfessionalScheduleScreen user={currentUser} onLogout={handleLogout} />
         ) : (
-          <DashboardScreen
-            user={currentUser}
-            appointments={appointments}
-            onOpenBooking={() => setIsBookingOpen(true)}
-            onOpenDetail={(apt) => setSelectedAppointment(apt)}
-            onLogout={handleLogout}
-          />
+          <UserBookingScreen user={currentUser} onLogout={handleLogout} />
         )
       )}
-
-      {/* Booking Modal */}
-      <BookAppointmentModal
-        isOpen={isBookingOpen}
-        onClose={() => setIsBookingOpen(false)}
-        onAppointmentBooked={handleBookAppointment}
-        patientName={currentUser?.name ?? ''}
-        patientId={currentUser?.id ?? ''}
-      />
-
-      {/* Appointment Detail & Actions Modal */}
-      <AppointmentDetailModal
-        appointment={selectedAppointment}
-        onClose={() => setSelectedAppointment(null)}
-        onCancelAppointment={handleCancelAppointment}
-        onRescheduleAppointment={handleRescheduleAppointment}
-      />
 
     </div>
   );

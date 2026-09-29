@@ -1,0 +1,24 @@
+import React, { useEffect, useState } from 'react';
+import { CalendarClock, LogOut, Plus, Trash2 } from 'lucide-react';
+import type { User } from '../types';
+import { createBlock, deleteBlock, getLocations, getOwnBlocks, SchedulingApiError, type AvailabilityBlock, type Location } from './schedulingApi';
+
+const input = 'w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20';
+const tomorrow = () => { const value = new Date(); value.setDate(value.getDate() + 1); return value.toISOString().slice(0, 10); };
+const text = (e: unknown) => e instanceof SchedulingApiError ? e.message : 'No fue posible actualizar la agenda.';
+
+export function ProfessionalScheduleScreen({ user, onLogout }: { user: User; onLogout: () => void }) {
+  const [date, setDate] = useState(tomorrow); const [locations, setLocations] = useState<Location[]>([]); const [blocks, setBlocks] = useState<AvailabilityBlock[]>([]);
+  const [locationId, setLocationId] = useState('1'); const [startTime, setStartTime] = useState('08:00'); const [endTime, setEndTime] = useState('12:00');
+  const [loading, setLoading] = useState(true); const [error, setError] = useState(''); const [success, setSuccess] = useState('');
+  const reload = async () => { setLoading(true); setError(''); try { setBlocks(await getOwnBlocks(date)); } catch (e) { setError(text(e)); } finally { setLoading(false); } };
+  useEffect(() => { getLocations().then((items) => setLocations(items.filter((item) => item.active))).catch((e) => setError(text(e))); }, []);
+  useEffect(() => { void reload(); }, [date]);
+  const submit = async (event: React.FormEvent) => { event.preventDefault(); setError(''); setSuccess(''); try { await createBlock({ locationId: Number(locationId), date, startTime: `${startTime}:00`, endTime: `${endTime}:00` }); setSuccess('Bloque publicado en slots de 30 minutos.'); await reload(); } catch (e) { setError(text(e)); } };
+  const remove = async (id: number) => { setError(''); try { await deleteBlock(id); setSuccess('Bloque eliminado.'); await reload(); } catch (e) { setError(text(e)); } };
+  return <main className="w-full max-w-5xl space-y-6" id="professional-schedule-screen"><header className="rounded-2xl border border-slate-100 bg-white px-6 py-4 shadow-sm flex justify-between"><div className="flex items-center gap-3"><div className="rounded-xl bg-blue-600 p-2.5 text-white"><CalendarClock className="w-5 h-5" /></div><div><h1 className="font-bold">Mi disponibilidad</h1><p className="text-xs text-slate-500">{user.name} · publica solo tus bloques futuros</p></div></div><button onClick={onLogout} aria-label="Cerrar sesión" className="rounded-xl p-2 text-slate-500 hover:bg-red-50 hover:text-red-600"><LogOut className="w-5 h-5" /></button></header>
+    {(error || success) && <p role={error ? 'alert' : 'status'} className={`rounded-xl border p-3 text-sm ${error ? 'border-red-200 bg-red-50 text-red-700' : 'border-emerald-200 bg-emerald-50 text-emerald-700'}`}>{error || success}</p>}
+    <form onSubmit={submit} className="grid grid-cols-1 gap-3 rounded-3xl border border-slate-100 bg-white p-6 shadow-sm md:grid-cols-5"><select className={input} value={locationId} onChange={(e) => setLocationId(e.target.value)}>{locations.map((l) => <option key={l.id} value={l.id}>{l.code}</option>)}</select><input className={input} type="date" min={tomorrow()} value={date} onChange={(e) => setDate(e.target.value)} /><input className={input} type="time" step="1800" value={startTime} onChange={(e) => setStartTime(e.target.value)} /><input className={input} type="time" step="1800" value={endTime} onChange={(e) => setEndTime(e.target.value)} /><button className="rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white flex items-center justify-center gap-2"><Plus className="w-4 h-4" />Publicar</button></form>
+    <section className="rounded-3xl border border-slate-100 bg-white p-6 shadow-sm"><h2 className="mb-4 font-bold">Bloques del {date}</h2>{loading ? <p className="text-sm text-slate-400">Cargando agenda…</p> : blocks.length === 0 ? <p className="text-sm text-slate-500">No hay bloques publicados para esta fecha.</p> : <div className="space-y-3">{blocks.map((block) => <article key={block.id} className="flex items-center justify-between rounded-2xl border border-slate-100 p-4"><span className="text-sm font-medium">Sede #{block.locationId} · {block.startTime.slice(0, 5)}–{block.endTime.slice(0, 5)}</span><button onClick={() => void remove(block.id)} aria-label={`Eliminar bloque ${block.id}`} className="rounded-lg p-2 text-red-600 hover:bg-red-50"><Trash2 className="w-4 h-4" /></button></article>)}</div>}</section>
+  </main>;
+}

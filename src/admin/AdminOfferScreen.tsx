@@ -11,6 +11,7 @@ import {
   type Specialty,
 } from './adminOfferApi';
 import type { User } from '../types';
+import { AdminAppointmentsPanel } from '../scheduling/AdminAppointmentsPanel';
 
 interface AdminOfferScreenProps { user: User; onLogout: () => void; }
 
@@ -118,6 +119,8 @@ export const AdminOfferScreen: React.FC<AdminOfferScreenProps> = ({ user, onLogo
         <label className="flex items-center gap-2 text-sm text-slate-600"><input type="checkbox" checked={active} onChange={(e) => setActive(e.target.checked)} /> Profesional activo</label>
         <button className="py-2.5 px-5 rounded-xl bg-blue-600 text-white text-sm font-semibold" type="submit">Guardar asignaciones</button>
       </form>
+
+      <AdminAppointmentsPanel />
 
       <footer className="p-4 bg-white rounded-2xl border border-slate-100 text-center text-xs text-slate-500 flex items-center justify-center gap-2"><CheckCircle2 className="w-4 h-4 text-emerald-600" />Las validaciones definitivas permanecen en la API.</footer>
     </main>
