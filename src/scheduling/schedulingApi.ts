@@ -8,7 +8,6 @@ export interface AvailabilityBlock { id: number; professionalId: number; locatio
 export interface AvailabilityOption { professionalId: number; locationId: number; specialtyId: number; startAt: string; endAt: string; durationMinutes: number; general: boolean; professionalName: string; locationName: string; specialtyName: string; }
 export interface Appointment { id: number; patientUserId: number; professionalId: number; locationId: number; specialtyId: number; status: 'APPROVED' | 'REQUESTED' | 'REJECTED' | 'CANCELLED' | 'COMPLETED' | 'NO_SHOW'; startAt: string; endAt: string; reason?: string | null; locationName: string; specialtyName: string; professionalName: string; patientName: string; }
 export interface AppointmentHistory { appointmentId: number; status: Appointment['status']; actorUserId: number | null; source: 'USER' | 'ADMIN' | 'SYSTEM'; reason: string | null; changedAt: string; }
-export interface RescheduleRequest { id: number; appointmentId: number; status: 'PENDING' | 'APPROVED' | 'REJECTED' | 'CANCELLED'; requestedStartAt: string; requestedEndAt: string; locationName: string; specialtyName: string; professionalName: string; decisionReason?: string | null; }
 
 export class SchedulingApiError extends Error { constructor(public readonly status: number, message: string) { super(message); this.name = 'SchedulingApiError'; } }
 
@@ -29,8 +28,7 @@ export const reserveAppointment = (input: { professionalId: number; locationId: 
 export const getMyAppointments = (status?: string, date?: string) => { const query = new URLSearchParams(); if (status) query.set('status', status); if (date) query.set('date', date); return request<Appointment[]>(`/api/v1/appointments${query.size ? `?${query}` : ''}`); };
 export const cancelAppointment = (id: number) => request<Appointment>(`/api/v1/appointments/${id}/cancel`, { method: 'POST' });
 export const getAppointmentHistory = (id: number) => request<AppointmentHistory[]>(`/api/v1/appointments/${id}/history`);
-export const requestReschedule = (appointmentId: number, locationId: number, startAt: string) => request<RescheduleRequest>(`/api/v1/appointments/${appointmentId}/reschedules`, { method: 'POST', body: JSON.stringify({ locationId, startAt }) });
-export const getMyReschedules = () => request<RescheduleRequest[]>('/api/v1/reschedules');
+export const requestReschedule = (appointmentId: number, locationId: number, startAt: string) => request<Appointment>(`/api/v1/appointments/${appointmentId}/reschedules`, { method: 'POST', body: JSON.stringify({ locationId, startAt }) });
 export const getOwnBlocks = (date: string, locationId?: number) => { const query = new URLSearchParams({ date }); if (locationId) query.set('locationId', String(locationId)); return request<AvailabilityBlock[]>(`/api/v1/professional/availability-blocks?${query}`); };
 export const createBlock = (input: { locationId: number; date: string; startTime: string; endTime: string }) => request<AvailabilityBlock>('/api/v1/professional/availability-blocks', { method: 'POST', body: JSON.stringify(input) });
 export const updateBlock = (id: number, input: { locationId: number; date: string; startTime: string; endTime: string }) => request<AvailabilityBlock>(`/api/v1/professional/availability-blocks/${id}`, { method: 'PATCH', body: JSON.stringify(input) });
@@ -39,5 +37,3 @@ export const getProfessionalAppointments = (date?: string, locationId?: number) 
 export const closeProfessionalAppointment = (id: number, outcome: 'COMPLETED' | 'NO_SHOW') => request<Appointment>(`/api/v1/professional/appointments/${id}/close`, { method: 'POST', body: JSON.stringify({ outcome }) });
 export const getRequestedAppointments = () => request<Appointment[]>('/api/v1/admin/appointments');
 export const decideAppointment = (id: number, decision: 'APPROVE' | 'REJECT', reason?: string) => request<Appointment>(`/api/v1/admin/appointments/${id}/decision`, { method: 'POST', body: JSON.stringify({ decision, reason }) });
-export const getPendingReschedules = () => request<RescheduleRequest[]>('/api/v1/admin/reschedules');
-export const decideReschedule = (id: number, decision: 'APPROVE' | 'REJECT', reason?: string) => request<RescheduleRequest>(`/api/v1/admin/reschedules/${id}/decision`, { method: 'POST', body: JSON.stringify({ decision, reason }) });

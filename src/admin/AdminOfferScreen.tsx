@@ -12,7 +12,6 @@ import {
 } from './adminOfferApi';
 import type { User } from '../types';
 import { AdminAppointmentsPanel } from '../scheduling/AdminAppointmentsPanel';
-import { AdminReschedulesPanel } from '../scheduling/AdminReschedulesPanel';
 
 interface AdminOfferScreenProps { user: User; onLogout: () => void; }
 
@@ -122,7 +121,6 @@ export const AdminOfferScreen: React.FC<AdminOfferScreenProps> = ({ user, onLogo
       </form>
 
       <AdminAppointmentsPanel />
-      <AdminReschedulesPanel />
 
       <footer className="p-4 bg-white rounded-2xl border border-slate-100 text-center text-xs text-slate-500 flex items-center justify-center gap-2"><CheckCircle2 className="w-4 h-4 text-emerald-600" />Las validaciones definitivas permanecen en la API.</footer>
     </main>
