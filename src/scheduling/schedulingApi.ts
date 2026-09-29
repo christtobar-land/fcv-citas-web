@@ -5,7 +5,7 @@ const API_URL = (import.meta.env.VITE_API_URL ?? 'http://localhost:8080').replac
 export interface Specialty { id: number; code: string; name: string; appointmentDurationMinutes: number; general: boolean; }
 export interface Location { id: number; code: string; name: string; active: boolean; }
 export interface AvailabilityBlock { id: number; professionalId: number; locationId: number; date: string; startTime: string; endTime: string; }
-export interface AvailabilityOption { professionalId: number; locationId: number; specialtyId: number; startAt: string; endAt: string; durationMinutes: number; general: boolean; }
+export interface AvailabilityOption { professionalId: number; locationId: number; specialtyId: number; startAt: string; endAt: string; durationMinutes: number; general: boolean; professionalName: string; locationName: string; specialtyName: string; }
 export interface Appointment { id: number; patientUserId: number; professionalId: number; locationId: number; specialtyId: number; status: 'APPROVED' | 'REQUESTED' | 'REJECTED' | 'CANCELLED' | 'COMPLETED' | 'NO_SHOW'; startAt: string; endAt: string; reason?: string | null; locationName: string; specialtyName: string; professionalName: string; }
 export interface AppointmentHistory { appointmentId: number; status: Appointment['status']; actorUserId: number | null; source: 'USER' | 'ADMIN' | 'SYSTEM'; reason: string | null; changedAt: string; }
 
