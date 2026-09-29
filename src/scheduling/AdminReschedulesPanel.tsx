@@ -1,0 +1,11 @@
+import React, { useEffect, useState } from 'react';
+import { Check, X } from 'lucide-react';
+import { decideReschedule, getPendingReschedules, SchedulingApiError, type RescheduleRequest } from './schedulingApi';
+
+export function AdminReschedulesPanel() {
+  const [items, setItems] = useState<RescheduleRequest[]>([]); const [error, setError] = useState('');
+  const reload = async () => { try { setItems(await getPendingReschedules()); } catch (e) { setError(e instanceof SchedulingApiError ? e.message : 'No fue posible cargar las reprogramaciones.'); } };
+  useEffect(() => { void reload(); }, []);
+  const decide = async (id: number, decision: 'APPROVE' | 'REJECT') => { const reason = decision === 'REJECT' ? window.prompt('Indica el motivo del rechazo:')?.trim() : undefined; if (decision === 'REJECT' && !reason) return; try { await decideReschedule(id, decision, reason); await reload(); } catch (e) { setError(e instanceof SchedulingApiError ? e.message : 'No fue posible guardar la decisión.'); } };
+  return <section className="rounded-3xl border border-slate-100 bg-white p-6 shadow-sm"><h2 className="font-bold">Reprogramaciones pendientes</h2>{error && <p role="alert" className="mt-3 rounded-xl bg-red-50 p-3 text-sm text-red-700">{error}</p>}{items.length === 0 ? <p className="mt-3 text-sm text-slate-500">No hay cambios de horario pendientes.</p> : <div className="mt-4 space-y-3">{items.map((item) => <article key={item.id} className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-100 p-4"><div><p className="font-semibold">{item.specialtyName} · {item.professionalName}</p><p className="text-sm text-slate-600">Nueva franja: {item.requestedStartAt.replace('T', ' ').slice(0, 16)} · {item.locationName}</p></div><div className="flex gap-2"><button onClick={() => void decide(item.id, 'APPROVE')} className="rounded-xl bg-emerald-600 px-3 py-2 text-xs font-semibold text-white"><Check className="mr-1 inline h-4 w-4" />Aprobar</button><button onClick={() => void decide(item.id, 'REJECT')} className="rounded-xl bg-red-600 px-3 py-2 text-xs font-semibold text-white"><X className="mr-1 inline h-4 w-4" />Rechazar</button></div></article>)}</div>}</section>;
+}
