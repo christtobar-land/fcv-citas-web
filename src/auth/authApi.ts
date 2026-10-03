@@ -173,9 +173,32 @@ export function getAccessToken(): string | null {
 
 export function authErrorMessage(error: unknown): string {
   if (!(error instanceof AuthApiError)) return 'Ocurrió un error inesperado.';
-  if (error.status === 400) return 'Revisa los datos ingresados e inténtalo nuevamente.';
+  if (error.status === 400) return error.message || 'Revisa los datos ingresados e inténtalo nuevamente.';
   if (error.status === 401) return 'El correo, la contraseña o la sesión no son válidos.';
   if (error.status === 409) return 'El correo o el documento ya se encuentran registrados.';
   if (error.status === 403) return 'La solicitud fue rechazada por la configuración de seguridad.';
   return error.message;
+}
+
+export interface ForgotPasswordResponse {
+  message: string;
+  devToken?: string;
+}
+
+export interface ResetPasswordResponse {
+  message: string;
+}
+
+export async function requestForgotPassword(email: string): Promise<ForgotPasswordResponse> {
+  return request<ForgotPasswordResponse>('/forgot-password', {
+    method: 'POST',
+    body: JSON.stringify({ email: email.trim().toLowerCase() }),
+  });
+}
+
+export async function resetPassword(token: string, newPassword: string): Promise<ResetPasswordResponse> {
+  return request<ResetPasswordResponse>('/reset-password', {
+    method: 'POST',
+    body: JSON.stringify({ token: token.trim(), newPassword }),
+  });
 }

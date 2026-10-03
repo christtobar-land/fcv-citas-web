@@ -1,10 +1,29 @@
-import React, { useState } from 'react';
-import { User as UserIcon, Mail, Phone, Lock, Eye, EyeOff, FileText, ShieldCheck, ArrowLeft } from 'lucide-react';
-import { User } from '../types';
+import React, { useState, useEffect } from 'react';
+import {
+  Eye,
+  EyeOff,
+  ShieldCheck,
+  ArrowRight,
+  ArrowLeft,
+  User,
+  CreditCard,
+  Building2,
+  Phone,
+  Mail,
+  Lock,
+  HeartHandshake,
+  CheckCircle2,
+  Calendar,
+  RotateCcw,
+  FileText,
+} from 'lucide-react';
+import { User as UserType } from '../types';
 import { authErrorMessage, register } from '../auth/authApi';
+import { fetchEpsList, EpsItem } from '../services/appointmentApi';
+import { CustomSelect } from './CustomSelect';
 
 interface RegisterScreenProps {
-  onRegisterSuccess: (user: User) => void;
+  onRegisterSuccess: (user: UserType) => void;
   onNavigateLogin: () => void;
 }
 
@@ -16,6 +35,7 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({
   const [lastName, setLastName] = useState('');
   const [documentType, setDocumentType] = useState('CC');
   const [documentNumber, setDocumentNumber] = useState('');
+  const [selectedEps, setSelectedEps] = useState<string>('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
@@ -23,15 +43,46 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({
   const [acceptTerms, setAcceptTerms] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
+  const [epsCatalog, setEpsCatalog] = useState<EpsItem[]>([]);
+
+  // Cargar catálogo de EPS registradas con convenio directamente desde la base de datos
+  useEffect(() => {
+    fetchEpsList()
+      .then((list) => {
+        if (list && list.length > 0) {
+          // Presentar tal cual las entidades registradas en la base de datos
+          const activeEps = list
+            .filter((e) => e.active !== false)
+            .sort((a, b) => a.name.localeCompare(b.name));
+          setEpsCatalog(activeEps);
+          if (activeEps.length > 0) {
+            setSelectedEps(String(activeEps[0].id));
+          }
+        }
+      })
+      .catch(() => {
+        // Fallback estatutario con EPS registradas en la base de datos
+        const fallbackEps: EpsItem[] = [
+          { id: 5, code: 'EPS_COMPENSAR', name: 'Compensar EPS', active: true },
+          { id: 6, code: 'EPS_FAMISANAR', name: 'EPS Famisanar', active: true },
+          { id: 1, code: 'EPS_SALUD_TOTAL', name: 'EPS Salud Total', active: true },
+          { id: 2, code: 'EPS_SANITAS', name: 'EPS Sanitas', active: true },
+          { id: 3, code: 'EPS_SURA', name: 'EPS Sura', active: true },
+          { id: 4, code: 'EPS_NUEVA_EPS', name: 'Nueva EPS', active: true },
+        ];
+        setEpsCatalog(fallbackEps);
+        setSelectedEps(String(fallbackEps[0].id));
+      });
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!firstName || !lastName || !documentType || !documentNumber || !email || !phone || !password) {
-      setErrorMessage('Por favor completa los campos obligatorios.');
+    if (!firstName.trim() || !lastName.trim() || !documentType || !documentNumber.trim() || !email.trim() || !phone.trim() || !password) {
+      setErrorMessage('Por favor completa todos los campos obligatorios del registro.');
       return;
     }
     if (!acceptTerms) {
-      setErrorMessage('Debes aceptar el tratamiento confidencial de datos de salud.');
+      setErrorMessage('Debes aceptar los términos de servicio y tratamiento de datos de salud.');
       return;
     }
 
@@ -39,12 +90,12 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({
     setIsLoading(true);
     try {
       const user = await register({
-        firstName,
-        lastName,
+        firstName: firstName.trim(),
+        lastName: lastName.trim(),
         documentType,
-        documentNumber,
-        email,
-        phone,
+        documentNumber: documentNumber.trim(),
+        email: email.trim().toLowerCase(),
+        phone: phone.trim(),
         password,
       });
       onRegisterSuccess(user);
@@ -55,344 +106,395 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({
     }
   };
 
+  const documentTypeOptions = [
+    { value: 'CC', label: 'Cédula de Ciudadanía (CC)' },
+    { value: 'TI', label: 'Tarjeta de Identidad (TI)' },
+    { value: 'CE', label: 'Cédula de Extranjería (CE)' },
+    { value: 'PA', label: 'Pasaporte (PA)' },
+  ];
+
+  const epsOptions = epsCatalog.map((item) => ({
+    value: String(item.id),
+    label: item.name,
+  }));
+
   return (
-    <main
-      className="w-full max-w-5xl bg-white rounded-3xl shadow-xl shadow-slate-200/70 border border-slate-100 overflow-hidden my-auto"
-      data-purpose="register-card-container"
+    <div
+      className="relative w-full min-h-screen flex items-center justify-center p-4 sm:p-6 lg:py-8 lg:px-10 font-sans overflow-x-hidden"
       id="register-main-container"
     >
-      <div className="grid grid-cols-1 lg:grid-cols-12 min-h-[680px]">
-        {/* Left Editorial Panel */}
-        <section
-          className="lg:col-span-5 p-4 md:p-5 flex flex-col"
-          data-purpose="editorial-branding-panel"
-          id="register-editorial-panel"
-        >
-          <div className="relative w-full h-full bg-gradient-to-b from-[#07152B] via-[#0A1F3E] to-[#0E2952] rounded-2xl overflow-hidden p-8 sm:p-10 flex flex-col justify-between text-white border border-slate-800/40">
-            <div className="relative z-10 space-y-4">
-              <div
-                id="register-feature-pill"
-                className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-blue-500/10 border border-blue-400/20 text-xs font-medium text-blue-200 backdrop-blur-md"
-              >
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-                <span>Registro rápido • Cobertura médica integral</span>
-              </div>
+      {/* Fondo cinematográfico coherente con la identidad visual de MediHealth Plus */}
+      <div className="fixed inset-0 z-0 overflow-hidden pointer-events-none">
+        <img
+          src="/nurse_care.jpg"
+          alt="Atención médica y cuidado clínico profesional en MediHealth Plus"
+          className="w-full h-full object-cover object-center select-none"
+        />
+        <div className="absolute inset-0 bg-gradient-to-r from-slate-950/85 via-slate-950/30 to-slate-950/80 mix-blend-multiply" />
+        <div className="absolute inset-0 bg-[#870530]/20 pointer-events-none" />
+        <div className="absolute bottom-0 right-0 w-[550px] h-[550px] bg-gradient-to-tl from-[#870530]/40 to-transparent rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-black/40" />
+      </div>
 
-              <h1 className="text-3xl sm:text-4xl font-semibold tracking-tight text-white leading-snug">
-                Tu salud y bienestar en las mejores manos
-              </h1>
-
-              <p className="text-slate-300 text-sm sm:text-base leading-relaxed font-light">
-                Crea tu expediente digital en segundos y accede a especialistas certificados, recordatorios y recetas en línea.
-              </p>
-
-              <div className="pt-2 space-y-2.5 text-xs text-slate-300">
-                <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 rounded-full bg-blue-500/20 flex items-center justify-center text-blue-400">✓</div>
-                  <span>Agendamiento en 3 sencillos clics</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 rounded-full bg-blue-500/20 flex items-center justify-center text-blue-400">✓</div>
-                  <span>Recordatorios automáticos vía email y SMS</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 rounded-full bg-blue-500/20 flex items-center justify-center text-blue-400">✓</div>
-                  <span>Historial médico y recetas descargables</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Editorial Conceptual 3D Image */}
-            <div
-              className="relative mt-6 -mb-10 -mx-6 sm:-mx-8 flex justify-center items-end"
-              data-purpose="conceptual-visual"
-              id="register-conceptual-visual"
-            >
-              <div className="absolute inset-0 bg-blue-500/15 rounded-full filter blur-3xl pointer-events-none transform -translate-y-6"></div>
+      {/* Contenedor principal responsive */}
+      <div className="relative z-10 w-full max-w-[1520px] mx-auto flex flex-col lg:flex-row items-center justify-between gap-10 lg:gap-14 my-auto">
+        
+        {/* ==================== PANEL IZQUIERDO INSTITUCIONAL ==================== */}
+        <div className="w-full lg:w-[480px] xl:w-[520px] text-white space-y-7 pt-2 lg:pt-0">
+          
+          {/* Logo y Marca Principal */}
+          <div className="flex items-center gap-4 sm:gap-5">
+            <div className="w-18 h-18 sm:w-20 sm:h-20 rounded-3xl bg-white/10 backdrop-blur-md border border-white/30 p-3 sm:p-3.5 flex items-center justify-center shadow-2xl shrink-0">
               <img
-                id="register-glass-image"
-                alt="Calendario médico translúcido editorial"
-                className="relative z-10 w-full max-h-[300px] object-cover object-top visual-image-mask drop-shadow-2xl select-none pointer-events-none opacity-90"
-                src="https://lh3.googleusercontent.com/aida-public/AB6AXuCnkebvjTzdh3ta8B2gR0PdMFQQ2VjzYFr9gZvA_ay2_eaOtaLzR0yQS5o9r-3xt3OsJPfnE2G2PECJ5DVawKJ2ITtroIRVLhq2Y_J_K9EOgQFRq7PLWDnw1x_aiL2BvX-GxeFbzzgVKspZHGS1qYTS6PHBqJ1d5upBpoaLptAW0d1NKh37PNmcYfbGDI4BDd8WooB745FZ44DbtHB42v7dyTuW1-sdjGVj-dzWP93Ni2zxXYJTdX_SLg"
+                src="/logo.png"
+                alt="MediHealth Plus Logo"
+                className="w-full h-full object-contain filter brightness-0 invert drop-shadow-md"
               />
             </div>
-          </div>
-        </section>
-
-        {/* Right Form Panel */}
-        <section
-          className="lg:col-span-7 px-8 py-8 sm:px-12 sm:py-10 flex flex-col justify-between bg-white"
-          data-purpose="register-form-panel"
-          id="register-form-panel"
-        >
-          <div>
-            {/* Header with back navigation & brand */}
-            <div className="flex items-center justify-between mb-6">
+            <div>
               <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-blue-600 via-blue-600 to-sky-400 flex items-center justify-center shadow-md shadow-blue-500/20">
-                  <svg
-                    className="w-4 h-4 text-white"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2.2"
-                    viewBox="0 0 24 24"
-                  >
-                    <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
-                  </svg>
-                </div>
-                <div>
-                  <span className="text-sm font-bold tracking-tight text-slate-900 block leading-tight">
-                    Portal de Citas
-                  </span>
-                  <span className="text-[10px] text-slate-400 font-medium tracking-wide uppercase">
-                    Nuevo Paciente
-                  </span>
-                </div>
+                <span className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-white drop-shadow-md">
+                  MediHealth
+                </span>
+                <span className="text-xs sm:text-sm font-extrabold px-3 py-1 rounded-full bg-[#A3073B] text-white border border-white/30 uppercase tracking-wider shadow-sm">
+                  Plus
+                </span>
               </div>
+              <p className="text-sm sm:text-base text-white/90 font-medium tracking-wide drop-shadow-xs mt-1">
+                Portal Asistencial y Gestión de Citas
+              </p>
+            </div>
+          </div>
 
+          {/* Título de bienvenida */}
+          <div className="space-y-3">
+            <h1 className="text-3xl sm:text-4xl lg:text-[44px] font-extrabold tracking-tight text-white leading-[1.18] drop-shadow-md">
+              Crea tu expediente digital en minutos
+            </h1>
+            <p className="text-white/90 text-sm sm:text-base font-normal leading-relaxed drop-shadow-xs max-w-lg">
+              Regístrate para agendar citas médicas generales y especializadas de forma inmediata, consultar tu historial asistencial y descargar constancias clínicas certificadas.
+            </p>
+          </div>
+
+          {/* Tarjetas de valor institucional */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-5 border-t border-white/20">
+            <div className="bg-black/35 backdrop-blur-md p-4 rounded-2xl border border-white/15 space-y-1">
+              <div className="flex items-center gap-2 text-white/80">
+                <Calendar className="w-4 h-4 text-white" />
+                <span className="text-[10px] font-extrabold uppercase tracking-wider">Agendamiento</span>
+              </div>
+              <span className="text-xs sm:text-sm font-bold text-white block">
+                Disponibilidad en vivo
+              </span>
+            </div>
+
+            <div className="bg-black/35 backdrop-blur-md p-4 rounded-2xl border border-white/15 space-y-1">
+              <div className="flex items-center gap-2 text-white/80">
+                <HeartHandshake className="w-4 h-4 text-white" />
+                <span className="text-[10px] font-extrabold uppercase tracking-wider">Convenios EPS</span>
+              </div>
+              <span className="text-xs sm:text-sm font-bold text-white block">
+                Validación de órdenes
+              </span>
+            </div>
+
+            <div className="bg-black/35 backdrop-blur-md p-4 rounded-2xl border border-white/15 space-y-1">
+              <div className="flex items-center gap-2 text-white/80">
+                <ShieldCheck className="w-4 h-4 text-white" />
+                <span className="text-[10px] font-extrabold uppercase tracking-wider">Seguridad</span>
+              </div>
+              <span className="text-xs sm:text-sm font-bold text-white block">
+                Reserva médica 100%
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* ==================== PANEL DERECHO: FORMULARIO DE REGISTRO ==================== */}
+        <div className="w-full lg:w-[560px] xl:w-[600px] shrink-0 my-auto">
+          <div className="bg-white/95 backdrop-blur-xl rounded-3xl p-6 sm:p-8 lg:p-9 shadow-2xl shadow-slate-950/40 border border-white/80 transition relative">
+            
+            {/* Botón superior para volver al login */}
+            <div className="flex items-center justify-start mb-5 pb-3 border-b border-slate-100">
               <button
                 type="button"
-                id="back-to-login-btn"
                 onClick={onNavigateLogin}
-                className="text-xs text-slate-500 hover:text-blue-600 flex items-center gap-1.5 transition-colors cursor-pointer"
+                className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-500 hover:text-slate-800 transition cursor-pointer"
               >
                 <ArrowLeft className="w-3.5 h-3.5" />
-                <span>Volver al Login</span>
+                <span>Volver al ingreso</span>
               </button>
             </div>
 
-            <div className="mb-6">
-              <h2 className="text-2xl font-bold tracking-tight text-slate-900">
-                Registrarse como Paciente
+            {/* Encabezado del Formulario */}
+            <div className="mb-5">
+              <span className="text-[11px] font-extrabold uppercase tracking-wider text-[#A3073B] block mb-1">
+                Afiliación de Paciente
+              </span>
+              <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900 leading-tight">
+                Crear Cuenta de Paciente
               </h2>
-              <p className="text-slate-500 text-xs sm:text-sm mt-1">
-                Completa tus datos para agendar citas y gestionar tu salud de manera centralizada.
+              <p className="text-xs text-slate-500 font-medium mt-1">
+                Ingresa tus datos personales, identificación y EPS para gestionar tus citas médicas
               </p>
             </div>
 
-            <form className="space-y-4" onSubmit={handleSubmit} id="register-form">
-              {errorMessage && (
-                <div
-                  id="register-error-alert"
-                  role="alert"
-                  className="p-3 text-xs text-red-700 bg-red-50 border border-red-200 rounded-xl"
-                >
-                  {errorMessage}
-                </div>
-              )}
+            {/* Alerta de Error Accesible */}
+            {errorMessage && (
+              <div
+                role="alert"
+                className="mb-5 p-3.5 rounded-2xl bg-[#FDF2F4] border border-[#F3C5D3] text-[#A3073B] text-xs font-semibold flex items-center gap-2"
+              >
+                <span className="w-2 h-2 rounded-full bg-[#A3073B] shrink-0" />
+                <span>{errorMessage}</span>
+              </div>
+            )}
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div>
-                <label
-                  className="block text-[11px] font-semibold text-slate-700 uppercase tracking-wider mb-1.5"
-                  htmlFor="reg-first-name"
-                >
-                  Nombres *
-                </label>
-                <div className="relative rounded-xl shadow-sm">
-                  <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
-                    <UserIcon className="h-4 w-4" strokeWidth={1.8} />
+            {/* Formulario */}
+            <form onSubmit={handleSubmit} className="space-y-4">
+              
+              {/* Bloque 1: Nombres y Apellidos (50% / 50%) */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label
+                    htmlFor="register-first-name"
+                    className="block text-xs font-extrabold uppercase tracking-wider text-slate-600 mb-1.5"
+                  >
+                    Nombres
+                  </label>
+                  <div className="relative">
+                    <input
+                      id="register-first-name"
+                      type="text"
+                      required
+                      value={firstName}
+                      onChange={(e) => setFirstName(e.target.value)}
+                      placeholder="Ej. Carlos Andrés"
+                      className="w-full h-11 bg-slate-50/70 hover:bg-white border border-slate-200/90 rounded-2xl px-4 text-xs font-bold text-slate-800 placeholder:text-slate-400 placeholder:font-normal focus:outline-none focus:ring-2 focus:ring-[#A3073B] focus:border-[#A3073B] transition pr-10"
+                    />
+                    <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3.5 text-slate-400">
+                      <User className="w-4 h-4" />
+                    </div>
                   </div>
-                  <input
-                    className="input-transition block w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
-                    id="reg-first-name"
-                    placeholder="Ej. Carmen"
-                    required
-                    type="text"
-                    value={firstName}
-                    onChange={(e) => setFirstName(e.target.value)}
+                </div>
+
+                <div>
+                  <label
+                    htmlFor="register-last-name"
+                    className="block text-xs font-extrabold uppercase tracking-wider text-slate-600 mb-1.5"
+                  >
+                    Apellidos
+                  </label>
+                  <div className="relative">
+                    <input
+                      id="register-last-name"
+                      type="text"
+                      required
+                      value={lastName}
+                      onChange={(e) => setLastName(e.target.value)}
+                      placeholder="Ej. Méndez Pérez"
+                      className="w-full h-11 bg-slate-50/70 hover:bg-white border border-slate-200/90 rounded-2xl px-4 text-xs font-bold text-slate-800 placeholder:text-slate-400 placeholder:font-normal focus:outline-none focus:ring-2 focus:ring-[#A3073B] focus:border-[#A3073B] transition pr-10"
+                    />
+                    <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3.5 text-slate-400">
+                      <User className="w-4 h-4" />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Bloque 2: Tipo y Número de Documento (Equilibrado 50% / 50%) */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label
+                    htmlFor="register-doc-type"
+                    className="block text-xs font-extrabold uppercase tracking-wider text-slate-600 mb-1.5"
+                  >
+                    Tipo de Documento
+                  </label>
+                  <CustomSelect
+                    id="register-doc-type"
+                    value={documentType}
+                    onChange={setDocumentType}
+                    options={documentTypeOptions}
+                    className="w-full"
+                    buttonClassName="h-11 px-4 rounded-2xl bg-slate-50/70 hover:bg-white border-slate-200/90"
                   />
                 </div>
-              </div>
-              <div>
-                <label className="block text-[11px] font-semibold text-slate-700 uppercase tracking-wider mb-1.5" htmlFor="reg-last-name">
-                  Apellidos *
-                </label>
-                <div className="relative rounded-xl shadow-sm">
-                  <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
-                    <UserIcon className="h-4 w-4" strokeWidth={1.8} />
-                  </div>
-                  <input className="input-transition block w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
-                    id="reg-last-name" placeholder="Ej. Rodríguez Silva" required type="text"
-                    value={lastName} onChange={(e) => setLastName(e.target.value)} />
-                </div>
-              </div>
-              </div>
 
-              {/* Grid: Email & Phone */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label
-                    className="block text-[11px] font-semibold text-slate-700 uppercase tracking-wider mb-1.5"
-                    htmlFor="reg-email"
+                    htmlFor="register-doc-number"
+                    className="block text-xs font-extrabold uppercase tracking-wider text-slate-600 mb-1.5"
                   >
-                    Correo Electrónico *
+                    Número de Documento
                   </label>
-                  <div className="relative rounded-xl shadow-sm">
-                    <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
-                      <Mail className="h-4 w-4" strokeWidth={1.8} />
-                    </div>
+                  <div className="relative">
                     <input
-                      className="input-transition block w-full pl-10 pr-3 py-2.5 bg-white border border-slate-200 rounded-xl text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
-                      id="reg-email"
-                      placeholder="carmen@ejemplo.com"
+                      id="register-doc-number"
+                      type="text"
                       required
-                      type="email"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
+                      value={documentNumber}
+                      onChange={(e) => setDocumentNumber(e.target.value)}
+                      placeholder="Ej. 1098765432"
+                      className="w-full h-11 bg-slate-50/70 hover:bg-white border border-slate-200/90 rounded-2xl px-4 text-xs font-bold text-slate-800 placeholder:text-slate-400 placeholder:font-normal focus:outline-none focus:ring-2 focus:ring-[#A3073B] focus:border-[#A3073B] transition pr-10"
                     />
+                    <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3.5 text-slate-400">
+                      <CreditCard className="w-4 h-4" />
+                    </div>
                   </div>
+                </div>
+              </div>
+
+              {/* Bloque 3: EPS y Teléfono (50% / 50%) */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label
+                    htmlFor="register-eps"
+                    className="block text-xs font-extrabold uppercase tracking-wider text-slate-600 mb-1.5"
+                  >
+                    EPS de Afiliación
+                  </label>
+                  <CustomSelect
+                    id="register-eps"
+                    value={selectedEps}
+                    onChange={setSelectedEps}
+                    options={epsOptions}
+                    className="w-full"
+                    buttonClassName="h-11 px-4 rounded-2xl bg-slate-50/70 hover:bg-white border-slate-200/90"
+                  />
                 </div>
 
                 <div>
                   <label
-                    className="block text-[11px] font-semibold text-slate-700 uppercase tracking-wider mb-1.5"
-                    htmlFor="reg-phone"
+                    htmlFor="register-phone"
+                    className="block text-xs font-extrabold uppercase tracking-wider text-slate-600 mb-1.5"
                   >
-                    Teléfono Móvil *
+                    Teléfono Móvil
                   </label>
-                  <div className="relative rounded-xl shadow-sm">
-                    <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
-                      <Phone className="h-4 w-4" strokeWidth={1.8} />
-                    </div>
+                  <div className="relative">
                     <input
-                      className="input-transition block w-full pl-10 pr-3 py-2.5 bg-white border border-slate-200 rounded-xl text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
-                      id="reg-phone"
-                      placeholder="+34 612 000 000"
-                    required
-                    type="tel"
+                      id="register-phone"
+                      type="tel"
+                      required
                       value={phone}
                       onChange={(e) => setPhone(e.target.value)}
+                      placeholder="Ej. 310 123 4567"
+                      className="w-full h-11 bg-slate-50/70 hover:bg-white border border-slate-200/90 rounded-2xl px-4 text-xs font-bold text-slate-800 placeholder:text-slate-400 placeholder:font-normal focus:outline-none focus:ring-2 focus:ring-[#A3073B] focus:border-[#A3073B] transition pr-10"
                     />
+                    <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3.5 text-slate-400">
+                      <Phone className="w-4 h-4" />
+                    </div>
                   </div>
                 </div>
               </div>
 
-              {/* Documento de identidad */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {/* Bloque 4: Correo Electrónico y Contraseña (50% / 50%) */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label
-                    className="block text-[11px] font-semibold text-slate-700 uppercase tracking-wider mb-1.5"
-                    htmlFor="reg-document-type"
+                    htmlFor="register-email"
+                    className="block text-xs font-extrabold uppercase tracking-wider text-slate-600 mb-1.5"
                   >
-                    Tipo de Documento *
+                    Correo Electrónico
                   </label>
-                  <div className="relative rounded-xl shadow-sm">
-                    <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
-                      <FileText className="h-4 w-4" strokeWidth={1.8} />
-                    </div>
-                    <select
-                      className="input-transition block w-full pl-10 pr-3 py-2.5 bg-white border border-slate-200 rounded-xl text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
-                      id="reg-document-type" required value={documentType}
-                      onChange={(e) => setDocumentType(e.target.value)}>
-                      <option value="CC">Cédula de ciudadanía</option>
-                      <option value="CE">Cédula de extranjería</option>
-                      <option value="PA">Pasaporte</option>
-                      <option value="TI">Tarjeta de identidad</option>
-                    </select>
-                  </div>
-                </div>
-
-                <div>
-                  <label
-                    className="block text-[11px] font-semibold text-slate-700 uppercase tracking-wider mb-1.5"
-                    htmlFor="reg-document-number"
-                  >
-                    Número de Documento *
-                  </label>
-                  <div className="relative rounded-xl shadow-sm">
-                    <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
-                      <FileText className="h-4 w-4" strokeWidth={1.8} />
-                    </div>
+                  <div className="relative">
                     <input
-                      className="input-transition block w-full pl-10 pr-3 py-2.5 bg-white border border-slate-200 rounded-xl text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
-                      id="reg-document-number" placeholder="Ej. 1098765432"
+                      id="register-email"
+                      type="email"
                       required
-                      type="text" value={documentNumber}
-                      onChange={(e) => setDocumentNumber(e.target.value)}
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder="correo@ejemplo.com"
+                      className="w-full h-11 bg-slate-50/70 hover:bg-white border border-slate-200/90 rounded-2xl px-4 text-xs font-bold text-slate-800 placeholder:text-slate-400 placeholder:font-normal focus:outline-none focus:ring-2 focus:ring-[#A3073B] focus:border-[#A3073B] transition pr-10"
                     />
+                    <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3.5 text-slate-400">
+                      <Mail className="w-4 h-4" />
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <label
+                    htmlFor="register-password"
+                    className="block text-xs font-extrabold uppercase tracking-wider text-slate-600 mb-1.5"
+                  >
+                    Contraseña
+                  </label>
+                  <div className="relative">
+                    <input
+                      id="register-password"
+                      type={showPassword ? 'text' : 'password'}
+                      required
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      placeholder="Mínimo 6 caracteres"
+                      className="w-full h-11 bg-slate-50/70 hover:bg-white border border-slate-200/90 rounded-2xl px-4 text-xs font-bold text-slate-800 placeholder:text-slate-400 placeholder:font-normal focus:outline-none focus:ring-2 focus:ring-[#A3073B] focus:border-[#A3073B] transition pr-10"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute inset-y-0 right-0 flex items-center px-3.5 text-slate-400 hover:text-slate-600 cursor-pointer"
+                      title={showPassword ? 'Ocultar contraseña' : 'Ver contraseña'}
+                    >
+                      {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
                   </div>
                 </div>
               </div>
 
-              <div>
-                <label className="block text-[11px] font-semibold text-slate-700 uppercase tracking-wider mb-1.5" htmlFor="reg-password">
-                  Contraseña *
-                </label>
-                <div className="relative rounded-xl shadow-sm">
-                  <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
-                    <Lock className="h-4 w-4" strokeWidth={1.8} />
-                  </div>
-                  <input className="input-transition block w-full pl-10 pr-10 py-2.5 bg-white border border-slate-200 rounded-xl text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
-                    id="reg-password" placeholder="Mínimo 8 caracteres" required minLength={8}
-                    type={showPassword ? 'text' : 'password'} value={password}
-                    onChange={(e) => setPassword(e.target.value)} />
-                  <button type="button" aria-label="Alternar visibilidad de contraseña" id="reg-toggle-pwd"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600 focus:outline-none">
-                    {showPassword ? <EyeOff className="h-4 w-4" strokeWidth={1.8} /> : <Eye className="h-4 w-4" strokeWidth={1.8} />}
-                  </button>
-                </div>
-              </div>
-
-              {/* Consent checkbox */}
+              {/* Consentimiento Informado */}
               <div className="pt-1">
-                <label className="flex items-start gap-2.5 cursor-pointer select-none text-xs text-slate-600">
+                <label className="flex items-start gap-2.5 cursor-pointer text-xs text-slate-600 select-none">
                   <input
-                    className="w-4 h-4 mt-0.5 rounded text-blue-600 focus:ring-blue-500/25 border-slate-300 transition-colors"
-                    id="accept-terms"
-                    name="accept-terms"
                     type="checkbox"
                     checked={acceptTerms}
                     onChange={(e) => setAcceptTerms(e.target.checked)}
+                    className="mt-0.5 rounded-md border-slate-300 text-[#A3073B] focus:ring-[#A3073B]"
                   />
-                  <span>
-                    He leído y acepto el consentimiento de privacidad y resguardo seguro de datos médicos conforme a la legislación vigente.
+                  <span className="leading-relaxed text-[11px] text-slate-500">
+                    Acepto los términos del servicio y autorizo el tratamiento confidencial de mis datos clínicos en la red asistencial de salud (Ley 1581 de 2012).
                   </span>
                 </label>
               </div>
 
-              {/* Submit CTA */}
-              <button
-                className="w-full py-3 px-4 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-medium text-sm rounded-xl shadow-sm hover:shadow-md shadow-blue-500/15 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 mt-2 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-75"
-                id="submit-register-btn"
-                type="submit"
-                disabled={isLoading}
-              >
-                {isLoading ? (
-                  <>
-                    <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
-                    <span>Creando expediente digital...</span>
-                  </>
-                ) : (
-                  <span>Registrarme y Acceder</span>
-                )}
-              </button>
+              {/* Botón de Enviar */}
+              <div className="pt-2">
+                <button
+                  type="submit"
+                  disabled={isLoading}
+                  className="w-full py-3.5 px-6 rounded-2xl bg-[#A3073B] hover:bg-[#870530] text-white font-bold text-xs tracking-wide shadow-md shadow-slate-900/10 hover:shadow-lg transition duration-150 flex items-center justify-center gap-2 disabled:opacity-70 cursor-pointer"
+                >
+                  {isLoading ? (
+                    <>
+                      <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      <span>Creando expediente digital...</span>
+                    </>
+                  ) : (
+                    <>
+                      <span>Registrarme y Acceder</span>
+                      <ArrowRight className="w-4 h-4" />
+                    </>
+                  )}
+                </button>
+              </div>
             </form>
-          </div>
 
-          {/* Footer note */}
-          <div className="pt-5 mt-4 border-t border-slate-100 text-center space-y-2">
-            <p className="text-xs text-slate-600">
-              ¿Ya estás registrado?{' '}
+            {/* Footer con enlace a login */}
+            <div className="mt-5 pt-4 border-t border-slate-100 text-center text-xs text-slate-500">
+              ¿Ya tienes cuenta activa?{' '}
               <button
                 type="button"
-                id="login-redirect-btn"
                 onClick={onNavigateLogin}
-                className="font-semibold text-blue-600 hover:text-blue-700 transition-colors ml-1 cursor-pointer bg-transparent border-0 p-0"
+                className="font-bold text-[#A3073B] hover:text-[#870530] transition ml-1 inline-flex items-center gap-1 cursor-pointer"
               >
                 Inicia sesión aquí
               </button>
-            </p>
-            <div className="flex items-center justify-center gap-1.5 text-slate-400 text-[11px]">
-              <ShieldCheck className="w-3.5 h-3.5 text-slate-400" />
-              <span>Certificado bajo estándares de seguridad médica internacional.</span>
             </div>
+
           </div>
-        </section>
+        </div>
+
       </div>
-    </main>
+    </div>
   );
 };

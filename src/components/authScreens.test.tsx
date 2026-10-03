@@ -22,7 +22,7 @@ describe('pantallas de autenticación', () => {
 
     await user.type(screen.getByLabelText(/correo electrónico/i), 'ana@example.com');
     await user.type(screen.getByLabelText(/^contraseña$/i), 'Password123*');
-    await user.click(screen.getByRole('button', { name: /iniciar sesión/i }));
+    await user.click(screen.getByRole('button', { name: /ingresar/i }));
 
     expect(auth.login).toHaveBeenCalledWith('ana@example.com', 'Password123*', true);
     expect(onSuccess).toHaveBeenCalledWith(account);
@@ -35,7 +35,7 @@ describe('pantallas de autenticación', () => {
 
     await user.type(screen.getByLabelText(/correo electrónico/i), 'ana@example.com');
     await user.type(screen.getByLabelText(/^contraseña$/i), 'incorrecta');
-    await user.click(screen.getByRole('button', { name: /iniciar sesión/i }));
+    await user.click(screen.getByRole('button', { name: /ingresar/i }));
 
     expect(await screen.findByRole('alert')).toHaveTextContent('El correo, la contraseña o la sesión no son válidos.');
   });
