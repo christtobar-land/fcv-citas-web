@@ -165,10 +165,11 @@ export async function fetchMyAppointments(): Promise<AppointmentItem[]> {
 }
 
 export async function bookAppointment(payload: BookAppointmentPayload): Promise<AppointmentItem> {
-  return apiFetch<AppointmentItem>('/api/v1/appointments', {
+  const item = await apiFetch<AppointmentItem>('/api/v1/appointments', {
     method: 'POST',
     body: JSON.stringify(payload),
   });
+  return { ...item, professionalName: cleanProfessionalName(item.professionalName) };
 }
 
 export async function rescheduleAppointment(
@@ -177,10 +178,11 @@ export async function rescheduleAppointment(
   reason?: string,
   professionalId?: number
 ): Promise<AppointmentItem> {
-  return apiFetch<AppointmentItem>(`/api/v1/appointments/${appointmentId}/reschedule`, {
+  const item = await apiFetch<AppointmentItem>(`/api/v1/appointments/${appointmentId}/reschedule`, {
     method: 'PATCH',
     body: JSON.stringify({ newStartAt, reason, professionalId }),
   });
+  return { ...item, professionalName: cleanProfessionalName(item.professionalName) };
 }
 
 export async function cancelAppointment(

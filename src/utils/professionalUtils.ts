@@ -5,6 +5,6 @@
 export const cleanProfessionalName = (name?: string | null): string => {
   if (!name) return '';
   return name
-    .replace(/^(Dr\(a\)\.?|Dra\.?|Dr\.?|Doctora|Doctor)\s*/i, '')
+    .replace(/^(Dr\(a\)\.?|Dr\(a\)|Dra\.?|Dr\.?|Doctora|Doctor)\s+/i, '')
     .trim();
 };

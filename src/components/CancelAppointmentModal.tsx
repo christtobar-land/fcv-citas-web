@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { X, AlertTriangle, Calendar, Clock, MapPin } from 'lucide-react';
 import { Appointment } from '../types';
 import { formatDisplayDate } from '../utils/dateUtils';
+import { cleanProfessionalName } from '../utils/professionalUtils';
 import { CustomSelect } from './CustomSelect';
 
 interface CancelAppointmentModalProps {
@@ -77,7 +78,7 @@ export const CancelAppointmentModal: React.FC<CancelAppointmentModalProps> = ({
                 {appointment.doctorSpecialty}
               </span>
               <span className="text-xs font-bold text-slate-900">
-                {appointment.doctorName}
+                {cleanProfessionalName(appointment.doctorName)}
               </span>
             </div>
             <div className="flex items-center gap-3 pt-2 border-t border-slate-200/60 text-xs text-slate-700">

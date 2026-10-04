@@ -90,7 +90,7 @@ export const BookAppointmentModal: React.FC<BookAppointmentModalProps> = ({
     const newAppointment: Appointment = {
       id: `apt-${Date.now()}`,
       doctorId: currentDoctor.id,
-      doctorName: currentDoctor.name,
+      doctorName: cleanProfessionalName(currentDoctor.name),
       doctorSpecialty: currentSpecialty.name,
       doctorAvatar: currentDoctor.avatar,
       patientId: patientId || 'usr-101',

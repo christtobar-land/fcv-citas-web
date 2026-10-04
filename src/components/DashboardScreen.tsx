@@ -340,13 +340,14 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
     const diffMinutes = Math.round((aptTimeMs - new Date().getTime()) / (1000 * 60));
     const isToday = aptDate === systemTodayStr;
 
+    const doctorClean = cleanProfessionalName(nextAppointment.doctorName);
     if (isToday) {
       if (diffMinutes <= 120 && diffMinutes >= -30) {
         return {
           urgency: 'imminent' as const,
           tag: 'Cita en breve',
           title: '¡Prepárate para tu consulta médica de hoy!',
-          message: `Tienes cita hoy a las ${nextAppointment.time} de ${nextAppointment.doctorSpecialty} con ${nextAppointment.doctorName} en ${nextAppointment.location}. Te sugerimos presentarte 15 minutos antes.`,
+          message: `Tienes cita hoy a las ${nextAppointment.time} de ${nextAppointment.doctorSpecialty} con ${doctorClean} en ${nextAppointment.location}. Te sugerimos presentarte 15 minutos antes.`,
           actionLabel: 'Ver detalles de atención',
           actionType: 'detail' as const,
           appointment: nextAppointment,
@@ -356,7 +357,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
         urgency: 'today' as const,
         tag: 'Programada para hoy',
         title: 'Recuerda tu cita de hoy',
-        message: `Hoy a las ${nextAppointment.time} serás atendido en ${nextAppointment.location} por ${nextAppointment.doctorName} (${nextAppointment.doctorSpecialty}).`,
+        message: `Hoy a las ${nextAppointment.time} serás atendido en ${nextAppointment.location} por ${doctorClean} (${nextAppointment.doctorSpecialty}).`,
         actionLabel: 'Ver expediente y sala',
         actionType: 'detail' as const,
         appointment: nextAppointment,
@@ -367,7 +368,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
       urgency: 'future' as const,
       tag: 'Próxima consulta',
       title: 'Próxima cita agendada',
-      message: `El ${formatDisplayDate(aptDate)} a las ${nextAppointment.time} tienes cita con ${nextAppointment.doctorName} (${nextAppointment.doctorSpecialty}) en ${nextAppointment.location}.`,
+      message: `El ${formatDisplayDate(aptDate)} a las ${nextAppointment.time} tienes cita con ${doctorClean} (${nextAppointment.doctorSpecialty}) en ${nextAppointment.location}.`,
       actionLabel: 'Ver cita o reprogramar',
       actionType: 'detail' as const,
       appointment: nextAppointment,

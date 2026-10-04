@@ -2,6 +2,7 @@ import React from 'react';
 import { X, Calendar, FileText, CheckCircle2 } from 'lucide-react';
 import { Appointment } from '../types';
 import { formatDisplayDate } from '../utils/dateUtils';
+import { cleanProfessionalName } from '../utils/professionalUtils';
 
 interface AppointmentHistoryModalProps {
   isOpen: boolean;
@@ -83,7 +84,7 @@ export const AppointmentHistoryModal: React.FC<AppointmentHistoryModalProps> = (
                     </span>
                   </div>
                   <h4 className="text-xs font-bold text-slate-900 mt-1">
-                    {apt.doctorSpecialty} • {apt.doctorName}
+                    {apt.doctorSpecialty} • {cleanProfessionalName(apt.doctorName)}
                   </h4>
                   <p className="text-[11px] text-slate-500 mt-0.5">
                     {apt.location} • {apt.reason}

@@ -12,6 +12,7 @@ import { CancelAppointmentModal } from './components/CancelAppointmentModal';
 import { CheckCircle2 } from 'lucide-react';
 import { logout, restoreSession } from './auth/authApi';
 import { fetchUserProfile } from './services/userApi';
+import { cleanProfessionalName } from './utils/professionalUtils';
 import {
   fetchMyAppointments,
   bookAppointment,
@@ -39,7 +40,7 @@ function mapApiToUi(item: AppointmentItem, userName: string): Appointment {
   return {
     id: String(item.id),
     doctorId: String(item.professionalId),
-    doctorName: item.professionalName,
+    doctorName: cleanProfessionalName(item.professionalName),
     doctorSpecialty: item.specialtyName,
     doctorAvatar: undefined,
     patientId: 'usr-current',
