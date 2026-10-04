@@ -789,8 +789,10 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
       doctorSpecialty: currentSpecialty.name,
       doctorAvatar: undefined,
       patientId: user.id || 'usr-101',
-      patientName: user.name || 'Carlos Andrés Méndez',
-      patientDocument: user.documentNumber ? `CC ${user.documentNumber}` : 'CC 92.000.100',
+      patientName: user.name || 'Afiliado institucional',
+      patientDocument: (user.documentType && user.documentNumber)
+        ? `${user.documentType} ${user.documentNumber}`
+        : (user.documentNumber ? `CC ${user.documentNumber}` : 'Afiliado activo institucional'),
       date: selectedDate,
       time: selectedTime,
       location: cleanSedeName,

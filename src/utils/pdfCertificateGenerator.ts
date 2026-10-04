@@ -148,7 +148,36 @@ export const generateAppointmentPdf = async (appointment: Appointment): Promise<
     color: winePrimary,
   });
 
-  page.drawText(appointment.patientName, {
+  // Resolver información real del paciente a partir de la cita o de la sesión autenticada activa
+  let patientName = appointment.patientName || 'Afiliado Institucional';
+  let patientDoc = appointment.patientDocument || '';
+
+  try {
+    const rawUser = localStorage.getItem('portal_citas_user') || sessionStorage.getItem('portal_citas_user');
+    if (rawUser) {
+      const parsedUser = JSON.parse(rawUser);
+      const isGenericName = !patientName || patientName.toLowerCase().startsWith('paciente') || patientName === 'Usuario' || patientName === 'Carlos Andrés Méndez';
+      if (isGenericName && parsedUser.name) {
+        patientName = parsedUser.name;
+      }
+      const isGenericDoc = !patientDoc || patientDoc.includes('92.000.100') || patientDoc === 'Afiliado activo institucional';
+      if (isGenericDoc) {
+        if (parsedUser.documentType && parsedUser.documentNumber) {
+          patientDoc = `${parsedUser.documentType} ${parsedUser.documentNumber}`;
+        } else if (parsedUser.documentNumber) {
+          patientDoc = `CC ${parsedUser.documentNumber}`;
+        }
+      }
+    }
+  } catch {
+    // Si no es posible parsear, se conserva la información de la cita
+  }
+
+  if (!patientDoc) {
+    patientDoc = 'Afiliado activo institucional';
+  }
+
+  page.drawText(patientName, {
     x: 55,
     y: patientCardY + 24,
     size: 12,
@@ -156,7 +185,7 @@ export const generateAppointmentPdf = async (appointment: Appointment): Promise<
     color: slateDark,
   });
 
-  page.drawText(`Identificación: ${appointment.patientDocument || 'Afiliado activo institucional'}`, {
+  page.drawText(`Identificación: ${patientDoc}`, {
     x: 55,
     y: patientCardY + 11,
     size: 9,

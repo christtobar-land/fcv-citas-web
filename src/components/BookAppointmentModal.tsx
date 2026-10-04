@@ -94,8 +94,20 @@ export const BookAppointmentModal: React.FC<BookAppointmentModalProps> = ({
       doctorSpecialty: currentSpecialty.name,
       doctorAvatar: currentDoctor.avatar,
       patientId: patientId || 'usr-101',
-      patientName: patientName || 'Carlos Andrés Méndez',
-      patientDocument: 'CC 92.000.100',
+      patientName: patientName || 'Afiliado institucional',
+      patientDocument: (() => {
+        try {
+          const raw = localStorage.getItem('portal_citas_user') || sessionStorage.getItem('portal_citas_user');
+          if (raw) {
+            const parsed = JSON.parse(raw);
+            if (parsed.documentType && parsed.documentNumber) return `${parsed.documentType} ${parsed.documentNumber}`;
+            if (parsed.documentNumber) return `CC ${parsed.documentNumber}`;
+          }
+        } catch {
+          // ignore
+        }
+        return 'Afiliado activo institucional';
+      })(),
       date: selectedDate,
       time: selectedTime,
       location: currentSede.name,

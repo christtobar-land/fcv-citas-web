@@ -21,21 +21,51 @@ import {
   type AppointmentItem,
 } from './services/appointmentApi';
 
-function mapApiToUi(item: AppointmentItem, userName: string): Appointment {
-  const [datePart, timePart] = item.scheduledStartAt.split('T');
-  const [hours, minutes] = (timePart || '08:00').split(':');
-  const hNum = parseInt(hours, 10);
-  const ampm = hNum >= 12 ? 'PM' : 'AM';
-  const h12 = hNum % 12 || 12;
-  const timeFormatted = `${String(h12).padStart(2, '0')}:${minutes} ${ampm}`;
+function mapApiToUi(item: AppointmentItem, userOrName?: User | string | null): Appointment {
+  const parts = (item.scheduledStartAt || '').split('T');
+  const datePart = parts[0] || '';
+  const timeRaw = parts[1] ? parts[1].substring(0, 5) : '';
 
-  let uiStatus: AppointmentStatus = 'confirmada';
+  let timeFormatted = timeRaw;
+  if (timeRaw) {
+    const [h, m] = timeRaw.split(':');
+    const hourNum = parseInt(h, 10);
+    const ampm = hourNum >= 12 ? 'PM' : 'AM';
+    const hour12 = hourNum % 12 || 12;
+    timeFormatted = `${String(hour12).padStart(2, '0')}:${m} ${ampm}`;
+  }
+
+  let uiStatus: Appointment['status'] = 'pendiente';
   if (item.statusCode === 'APPROVED') uiStatus = 'confirmada';
-  else if (item.statusCode === 'REQUESTED') uiStatus = 'pendiente';
   else if (item.statusCode === 'CANCELLED') uiStatus = 'cancelada';
   else if (item.statusCode === 'REJECTED') uiStatus = 'rechazada';
   else if (item.statusCode === 'COMPLETED') uiStatus = 'completada';
   else if (item.statusCode === 'NO_SHOW') uiStatus = 'no_asistio';
+
+  const userObj = typeof userOrName === 'object' && userOrName !== null ? userOrName : null;
+  const userName = userObj ? userObj.name : (typeof userOrName === 'string' && userOrName ? userOrName : 'Usuario');
+  
+  let userDocument = '';
+  if (userObj?.documentType && userObj?.documentNumber) {
+    userDocument = `${userObj.documentType} ${userObj.documentNumber}`;
+  } else if (userObj?.documentNumber) {
+    userDocument = `CC ${userObj.documentNumber}`;
+  } else {
+    // Si no está en el objeto de usuario pasado, buscar en localStorage si existe la sesión
+    try {
+      const stored = localStorage.getItem('portal_citas_user') || sessionStorage.getItem('portal_citas_user');
+      if (stored) {
+        const parsed = JSON.parse(stored) as User;
+        if (parsed.documentType && parsed.documentNumber) {
+          userDocument = `${parsed.documentType} ${parsed.documentNumber}`;
+        } else if (parsed.documentNumber) {
+          userDocument = `CC ${parsed.documentNumber}`;
+        }
+      }
+    } catch {
+      // Ignorar error de parsing
+    }
+  }
 
   return {
     id: String(item.id),
@@ -43,9 +73,9 @@ function mapApiToUi(item: AppointmentItem, userName: string): Appointment {
     doctorName: cleanProfessionalName(item.professionalName),
     doctorSpecialty: item.specialtyName,
     doctorAvatar: undefined,
-    patientId: 'usr-current',
+    patientId: userObj?.id || 'usr-current',
     patientName: userName,
-    patientDocument: 'CC 92.000.100',
+    patientDocument: userDocument || 'Afiliado activo institucional',
     date: datePart,
     time: timeFormatted,
     location: item.locationName,
@@ -95,7 +125,7 @@ export default function App() {
     try {
       const apiAppts = await fetchMyAppointments();
       if (Array.isArray(apiAppts)) {
-        const mapped = apiAppts.map((a) => mapApiToUi(a, user.name));
+        const mapped = apiAppts.map((a) => mapApiToUi(a, user));
         setAppointments(mapped);
       }
     } catch (err) {
@@ -107,6 +137,7 @@ export default function App() {
     try {
       const profile = await fetchUserProfile();
       if (profile) {
+        let updatedUserObj: User | null = null;
         setCurrentUser((prev) => {
           if (!prev) return prev;
           const updated: User = {
@@ -119,6 +150,7 @@ export default function App() {
             insuranceName: profile.affiliation?.epsName || prev.insuranceName,
             insuranceId: profile.affiliation?.membershipNumber || prev.insuranceId,
           };
+          updatedUserObj = updated;
           const saved = localStorage.getItem('portal_citas_user') || sessionStorage.getItem('portal_citas_user');
           if (saved) {
             const storage = localStorage.getItem('portal_citas_user') ? localStorage : sessionStorage;
@@ -126,6 +158,19 @@ export default function App() {
           }
           return updated;
         });
+
+        // Actualizar datos del paciente en la lista de citas en memoria
+        const docFormatted = (profile.documentType && profile.documentNumber)
+          ? `${profile.documentType} ${profile.documentNumber}`
+          : (profile.documentNumber ? `CC ${profile.documentNumber}` : '');
+
+        setAppointments((prev) =>
+          prev.map((apt) => ({
+            ...apt,
+            patientName: profile.fullName || apt.patientName,
+            patientDocument: docFormatted || apt.patientDocument,
+          }))
+        );
       }
     } catch {
       // Usar datos locales si el backend no responde o en pruebas offline
@@ -211,7 +256,7 @@ export default function App() {
         referralCode: newApt.referralCode,
       });
 
-      const mapped = mapApiToUi(apiRes, currentUser?.name ?? newApt.patientName);
+      const mapped = mapApiToUi(apiRes, currentUser || newApt.patientName);
       setAppointments((prev) => [mapped, ...prev.filter((p) => p.id !== mapped.id)]);
       showToast(`¡Cita agendada con éxito para el ${mapped.date} a las ${mapped.time}!`);
     } catch (err: unknown) {
@@ -258,7 +303,7 @@ export default function App() {
         }
 
         const updated = await rescheduleAppointment(numId, isoDateTime, reason, professionalId);
-        const mapped = mapApiToUi(updated, currentUser?.name ?? 'Usuario');
+        const mapped = mapApiToUi(updated, currentUser || 'Usuario');
         setAppointments((prev) =>
           prev.map((apt) => (apt.id === id ? mapped : apt))
         );
