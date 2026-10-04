@@ -990,16 +990,26 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                     </p>
                   </div>
 
-                  {/* Action Button: only shown if there is an active appointment to inspect */}
+                  {/* Action Buttons: only shown if there is an active appointment to inspect */}
                   {patientGuidance.actionType === 'detail' && patientGuidance.appointment && (
-                    <button
-                      type="button"
-                      onClick={() => onOpenDetail(patientGuidance.appointment!)}
-                      className="w-full mt-1 py-2 px-3.5 rounded-xl bg-white text-[#870530] hover:bg-rose-50 font-bold text-xs shadow-md transition-all flex items-center justify-center gap-1.5 cursor-pointer active:scale-98"
-                    >
-                      <span>{patientGuidance.actionLabel}</span>
-                      <ChevronRight className="w-3.5 h-3.5" />
-                    </button>
+                    <div className="flex items-center gap-2 mt-2">
+                      <button
+                        type="button"
+                        onClick={() => onOpenDetail(patientGuidance.appointment!, 'detail')}
+                        className="flex-1 py-2 px-3 rounded-xl bg-white/15 hover:bg-white/25 text-white font-bold text-xs transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+                      >
+                        <FileText className="w-3.5 h-3.5" />
+                        <span>Ver Cita</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => onOpenDetail(patientGuidance.appointment!, 'reschedule')}
+                        className="flex-1 py-2 px-3 rounded-xl bg-white text-[#870530] hover:bg-rose-50 font-bold text-xs shadow-md transition-all flex items-center justify-center gap-1.5 cursor-pointer active:scale-98"
+                      >
+                        <RotateCcw className="w-3.5 h-3.5" />
+                        <span>Reprogramar</span>
+                      </button>
+                    </div>
                   )}
                 </div>
 
