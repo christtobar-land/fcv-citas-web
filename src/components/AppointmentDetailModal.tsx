@@ -5,6 +5,7 @@ import { getSpecialtyIcon } from '../utils/specialtyIcons';
 import { fetchAppointmentHistory, AppointmentHistoryItem } from '../services/appointmentApi';
 import { formatDisplayDate } from '../utils/dateUtils';
 import { cleanProfessionalName } from '../utils/professionalUtils';
+import { generateAppointmentPdf } from '../utils/pdfCertificateGenerator';
 
 interface AppointmentDetailModalProps {
   isOpen?: boolean;
@@ -160,43 +161,9 @@ export const AppointmentDetailModal: React.FC<AppointmentDetailModalProps> = ({
   const handleDownloadProof = () => {
     setIsDownloading(true);
     try {
-      const headerTitle = isCompleted
-        ? 'MEDIHEALTH PLUS - CONSTANCIA DE ASISTENCIA MÉDICA'
-        : 'MEDIHEALTH PLUS - COMPROBANTE DE ASIGNACIÓN DE CITA';
-      const footerMsg = isCompleted
-        ? 'Constancia médica asistencial generada con firma y registro digital.'
-        : 'Comprobante formal de reserva de turno emitido por MediHealth Plus.';
-      const fileName = isCompleted
-        ? `constancia-asistencia-${appointment.id}.txt`
-        : `comprobante-cita-${appointment.id}.txt`;
-
-      const text = `================================================
-${headerTitle}
-================================================
-ID CITA: ${appointment.id}
-PACIENTE: ${appointment.patientName} (${appointment.patientDocument || 'Afiliado Activo'})
-PROFESIONAL: ${cleanProfessionalName(appointment.doctorName)}
-ESPECIALIDAD: ${appointment.doctorSpecialty}
-SEDE: ${appointment.location}
-FECHA Y HORA: ${formatDisplayDate(appointment.date)} a las ${appointment.time}
-ESTADO: ${appointment.status.toUpperCase()}
-${appointment.prescription ? `\nDIAGNÓSTICO MÉDICO: ${appointment.prescription.diagnosis}\nINDICACIONES: ${appointment.prescription.notes}` : ''}
-================================================
-${footerMsg}`;
-
-      const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
-      if (typeof window !== 'undefined' && typeof window.URL?.createObjectURL === 'function') {
-        const url = window.URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = fileName;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        if (typeof window.URL?.revokeObjectURL === 'function') {
-          window.URL.revokeObjectURL(url);
-        }
-      }
+      generateAppointmentPdf(appointment);
+    } catch (err) {
+      console.error('Error generando PDF de cita:', err);
     } finally {
       setIsDownloading(false);
     }

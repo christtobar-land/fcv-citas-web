@@ -243,19 +243,7 @@ export const PendingAppointmentsModal: React.FC<PendingAppointmentsModalProps> =
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-1.5 self-start sm:self-auto">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          onOpenDetail(apt, 'detail');
-                          onClose();
-                        }}
-                        className="w-7 h-7 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 flex items-center justify-center transition cursor-pointer"
-                        title="Ver detalle y comprobante"
-                        aria-label="Ver detalle de cita"
-                      >
-                        <Eye className="w-3.5 h-3.5" />
-                      </button>
+                    <div className="self-start sm:self-auto">
                       {isCompleted ? (
                         <span className="inline-flex items-center gap-1 px-3 py-1 text-[11px] font-bold rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
                           <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />

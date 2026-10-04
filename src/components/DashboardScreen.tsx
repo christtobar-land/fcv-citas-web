@@ -1072,26 +1072,15 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                             </p>
                           </div>
                         </div>
-                        <div className="flex items-center gap-1.5">
-                          <button
-                            type="button"
-                            onClick={() => onOpenDetail(apt, 'detail')}
-                            className="w-7 h-7 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 flex items-center justify-center transition cursor-pointer"
-                            title="Ver detalle y comprobante"
-                            aria-label="Ver detalle de cita"
-                          >
-                            <Eye className="w-3.5 h-3.5" />
-                          </button>
-                          <span
-                            className={`px-3 py-1 text-[11px] font-bold rounded-full border ${
-                              apt.status === 'confirmada'
-                                ? 'bg-slate-100 text-slate-800 border-slate-200'
-                                : 'bg-slate-100 text-slate-700 border-slate-200'
-                            }`}
-                          >
-                            {apt.status === 'confirmada' ? 'Confirmada' : 'En revisión'}
-                          </span>
-                        </div>
+                        <span
+                          className={`px-3 py-1 text-[11px] font-bold rounded-full border ${
+                            apt.status === 'confirmada'
+                              ? 'bg-slate-100 text-slate-800 border-slate-200'
+                              : 'bg-slate-100 text-slate-700 border-slate-200'
+                          }`}
+                        >
+                          {apt.status === 'confirmada' ? 'Confirmada' : 'En revisión'}
+                        </span>
                       </div>
 
                       {/* Schedule highlight pill */}

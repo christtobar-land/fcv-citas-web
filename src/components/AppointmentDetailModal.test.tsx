@@ -4,6 +4,10 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { AppointmentDetailModal } from './AppointmentDetailModal';
 import { Appointment } from '../types';
 
+vi.mock('../utils/pdfCertificateGenerator', () => ({
+  generateAppointmentPdf: vi.fn(),
+}));
+
 describe('AppointmentDetailModal - Expediente de Cita', () => {
   beforeEach(() => {
     vi.clearAllMocks();
