@@ -2158,7 +2158,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                         return filteredList.map((apt) => {
                           const timeStr = formatTimeFromIso(apt.scheduledStartAt);
                           const dateStr = apt.scheduledStartAt.split('T')[0];
-                          const isPending = apt.statusCode === 'APPROVED' || apt.statusCode === 'REQUESTED';
+                          const isPending = apt.statusCode === 'APPROVED';
                           const isCompleted = apt.statusCode === 'COMPLETED';
                           const isNoShow = apt.statusCode === 'NO_SHOW';
                           const phase = getAppointmentPhase(apt.scheduledStartAt, apt.scheduledEndAt, apt.statusCode);
