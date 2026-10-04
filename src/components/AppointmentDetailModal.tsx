@@ -154,11 +154,24 @@ export const AppointmentDetailModal: React.FC<AppointmentDetailModalProps> = ({
     return <UserCheck className="w-3.5 h-3.5 text-slate-600" />;
   };
 
+  const isCompleted = appointment.status === 'completada';
+  const downloadText = isCompleted ? 'Constancia Asistencia' : 'Comprobante Cita';
+
   const handleDownloadProof = () => {
     setIsDownloading(true);
     try {
+      const headerTitle = isCompleted
+        ? 'MEDIHEALTH PLUS - CONSTANCIA DE ASISTENCIA MÉDICA'
+        : 'MEDIHEALTH PLUS - COMPROBANTE DE ASIGNACIÓN DE CITA';
+      const footerMsg = isCompleted
+        ? 'Constancia médica asistencial generada con firma y registro digital.'
+        : 'Comprobante formal de reserva de turno emitido por MediHealth Plus.';
+      const fileName = isCompleted
+        ? `constancia-asistencia-${appointment.id}.txt`
+        : `comprobante-cita-${appointment.id}.txt`;
+
       const text = `================================================
-MEDIHEALTH PLUS - CONSTANCIA DE CITA MÉDICA
+${headerTitle}
 ================================================
 ID CITA: ${appointment.id}
 PACIENTE: ${appointment.patientName} (${appointment.patientDocument || 'Afiliado Activo'})
@@ -169,14 +182,14 @@ FECHA Y HORA: ${formatDisplayDate(appointment.date)} a las ${appointment.time}
 ESTADO: ${appointment.status.toUpperCase()}
 ${appointment.prescription ? `\nDIAGNÓSTICO MÉDICO: ${appointment.prescription.diagnosis}\nINDICACIONES: ${appointment.prescription.notes}` : ''}
 ================================================
-Constancia médica generada con firma y registro asistencial digital.`;
+${footerMsg}`;
 
       const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
       if (typeof window !== 'undefined' && typeof window.URL?.createObjectURL === 'function') {
         const url = window.URL.createObjectURL(blob);
         const link = document.createElement('a');
         link.href = url;
-        link.download = `comprobante-medihealth-${appointment.id}.txt`;
+        link.download = fileName;
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
@@ -437,10 +450,11 @@ Constancia médica generada con firma y registro asistencial digital.`;
             type="button"
             onClick={handleDownloadProof}
             disabled={isDownloading}
-            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 transition cursor-pointer"
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 transition cursor-pointer"
+            title={isCompleted ? 'Descargar constancia de asistencia' : 'Descargar comprobante de cita'}
           >
-            <Download className="w-3.5 h-3.5" />
-            <span>{isDownloading ? 'Generando...' : 'Descargar Constancia'}</span>
+            <Download className="w-3.5 h-3.5 text-slate-600" />
+            <span>{isDownloading ? 'Generando...' : downloadText}</span>
           </button>
 
           <button

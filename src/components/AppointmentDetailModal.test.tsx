@@ -73,7 +73,7 @@ describe('AppointmentDetailModal - Expediente de Cita', () => {
       />
     );
 
-    const downloadBtn = screen.getByRole('button', { name: /descargar constancia/i });
+    const downloadBtn = screen.getByRole('button', { name: /constancia asistencia/i });
     expect(downloadBtn).toBeInTheDocument();
     await user.click(downloadBtn);
   });

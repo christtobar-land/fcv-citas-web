@@ -25,6 +25,7 @@ import {
   UserPlus,
   Stethoscope,
   Power,
+  Eye,
 } from 'lucide-react';
 import { Appointment, Doctor, RoleType, User, AppointmentStatus } from '../types';
 import { DOCTORS, SEDES, SPECIALTIES } from '../data/mockData';
@@ -1071,15 +1072,26 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                             </p>
                           </div>
                         </div>
-                        <span
-                          className={`px-3 py-1 text-[11px] font-bold rounded-full border ${
-                            apt.status === 'confirmada'
-                              ? 'bg-slate-100 text-slate-800 border-slate-200'
-                              : 'bg-slate-100 text-slate-700 border-slate-200'
-                          }`}
-                        >
-                          {apt.status === 'confirmada' ? 'Confirmada' : 'En revisión'}
-                        </span>
+                        <div className="flex items-center gap-1.5">
+                          <button
+                            type="button"
+                            onClick={() => onOpenDetail(apt, 'detail')}
+                            className="w-7 h-7 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 flex items-center justify-center transition cursor-pointer"
+                            title="Ver detalle y comprobante"
+                            aria-label="Ver detalle de cita"
+                          >
+                            <Eye className="w-3.5 h-3.5" />
+                          </button>
+                          <span
+                            className={`px-3 py-1 text-[11px] font-bold rounded-full border ${
+                              apt.status === 'confirmada'
+                                ? 'bg-slate-100 text-slate-800 border-slate-200'
+                                : 'bg-slate-100 text-slate-700 border-slate-200'
+                            }`}
+                          >
+                            {apt.status === 'confirmada' ? 'Confirmada' : 'En revisión'}
+                          </span>
+                        </div>
                       </div>
 
                       {/* Schedule highlight pill */}
@@ -1100,14 +1112,25 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
 
                       {/* Interactive Action Buttons */}
                       <div className="flex items-center justify-between pt-2 border-t border-slate-100/80">
-                        <button
-                          type="button"
-                          onClick={() => onOpenDetail(apt, 'reschedule')}
-                          className="inline-flex items-center gap-1.5 text-xs font-bold text-[#A3073B] hover:text-[#870530] hover:bg-[#FDF2F4] px-3 py-1.5 rounded-xl transition cursor-pointer"
-                        >
-                          <RotateCcw className="w-3.5 h-3.5" />
-                          Reprogramar
-                        </button>
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => onOpenDetail(apt, 'detail')}
+                            className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-700 hover:text-slate-900 hover:bg-slate-100 px-3 py-1.5 rounded-xl transition cursor-pointer"
+                            title="Ver detalle y comprobante de cita"
+                          >
+                            <Eye className="w-3.5 h-3.5 text-slate-500" />
+                            Ver cita
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => onOpenDetail(apt, 'reschedule')}
+                            className="inline-flex items-center gap-1.5 text-xs font-bold text-[#A3073B] hover:text-[#870530] hover:bg-[#FDF2F4] px-3 py-1.5 rounded-xl transition cursor-pointer"
+                          >
+                            <RotateCcw className="w-3.5 h-3.5" />
+                            Reprogramar
+                          </button>
+                        </div>
                         <button
                           type="button"
                           onClick={() => onCancelAppointment(apt.id)}
