@@ -1,4 +1,4 @@
-import { jsPDF } from 'jspdf/dist/jspdf.es.min.js';
+import { jsPDF } from 'jspdf';
 import { Appointment } from '../types';
 import { formatDisplayDate } from './dateUtils';
 import { cleanProfessionalName } from './professionalUtils';
