@@ -18,6 +18,9 @@ export default defineConfig(() => {
         usePolling: true,
       },
     },
+    optimizeDeps: {
+      exclude: ['canvg', 'html2canvas', 'dompurify'],
+    },
     test: {
       environment: 'jsdom',
       setupFiles: './src/test/setup.ts',
