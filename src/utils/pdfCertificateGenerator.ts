@@ -1,314 +1,308 @@
+import { PDFDocument, rgb, StandardFonts } from 'pdf-lib';
 import { Appointment } from '../types';
 import { formatDisplayDate } from './dateUtils';
 import { cleanProfessionalName } from './professionalUtils';
 
-export const generateAppointmentPdf = (appointment: Appointment): void => {
+export const generateAppointmentPdf = async (appointment: Appointment): Promise<void> => {
   const isCompleted = appointment.status === 'completada';
-  const docTitle = isCompleted
+  const doc = await PDFDocument.create();
+
+  // A4 dimensions: 595.28 x 841.89 points
+  const pageWidth = 595.28;
+  const pageHeight = 841.89;
+  const page = doc.addPage([pageWidth, pageHeight]);
+
+  const fontBold = await doc.embedFont(StandardFonts.HelveticaBold);
+  const fontRegular = await doc.embedFont(StandardFonts.Helvetica);
+
+  // Colors
+  const winePrimary = rgb(163 / 255, 7 / 255, 59 / 255); // #A3073B
+  const slateDark = rgb(15 / 255, 23 / 255, 42 / 255);   // #0F172A
+  const slateText = rgb(51 / 255, 65 / 255, 85 / 255);   // #334155
+  const slateMuted = rgb(100 / 255, 116 / 255, 139 / 255); // #64748B
+  const bgLight = rgb(248 / 255, 250 / 255, 252 / 255);   // #F8FAFC
+  const borderLight = rgb(226 / 255, 232 / 255, 240 / 255); // #E2E8F0
+  const white = rgb(1, 1, 1);
+  const emeraldBg = rgb(236 / 255, 253 / 255, 245 / 255);
+  const emeraldText = rgb(6 / 255, 95 / 255, 70 / 255);
+  const emeraldBorder = rgb(167 / 255, 243 / 255, 208 / 255);
+  const roseBg = rgb(255 / 255, 241 / 255, 242 / 255);
+  const roseBorder = rgb(255 / 255, 228 / 255, 230 / 255);
+
+  // 1. Top Decorative Brand Banner
+  const bannerHeight = 72;
+  page.drawRectangle({
+    x: 0,
+    y: pageHeight - bannerHeight,
+    width: pageWidth,
+    height: bannerHeight,
+    color: winePrimary,
+  });
+
+  page.drawText('MEDIHEALTH PLUS', {
+    x: 40,
+    y: pageHeight - 38,
+    size: 20,
+    font: fontBold,
+    color: white,
+  });
+
+  page.drawText('Sistema Hospitalario y Gestión Inteligente de Citas Médicas', {
+    x: 40,
+    y: pageHeight - 54,
+    size: 9.5,
+    font: fontRegular,
+    color: white,
+  });
+
+  // Header Ribbon Badge
+  const ribbonText = isCompleted ? 'CONSTANCIA ASISTENCIAL' : 'COMPROBANTE OFICIAL';
+  const ribbonWidth = 145;
+  const ribbonHeight = 24;
+  page.drawRectangle({
+    x: pageWidth - 40 - ribbonWidth,
+    y: pageHeight - 50,
+    width: ribbonWidth,
+    height: ribbonHeight,
+    color: white,
+  });
+
+  page.drawText(ribbonText, {
+    x: pageWidth - 40 - ribbonWidth + 12,
+    y: pageHeight - 42,
+    size: 8.5,
+    font: fontBold,
+    color: winePrimary,
+  });
+
+  // 2. Document Title & Subtitle
+  const mainTitle = isCompleted
     ? 'CONSTANCIA DE ASISTENCIA Y ATENCIÓN MÉDICA'
     : 'COMPROBANTE DE ASIGNACIÓN DE CITA MÉDICA';
-  const badgeLabel = isCompleted ? 'ATENDIDA / CUMPLIDA' : 'RESERVA CONFIRMADA';
-  const badgeBg = isCompleted ? '#ECFDF5' : '#F1F5F9';
-  const badgeColor = isCompleted ? '#065F46' : '#1E293B';
-  const badgeBorder = isCompleted ? '#A7F3D0' : '#CBD5E1';
 
-  const htmlContent = `
-<!DOCTYPE html>
-<html lang="es">
-<head>
-  <meta charset="UTF-8" />
-  <title>${docTitle} - MH-${appointment.id}</title>
-  <style>
-    @page {
-      size: A4 portrait;
-      margin: 12mm 15mm;
-    }
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-    }
-    body {
-      background: #FFFFFF;
-      color: #0F172A;
-      font-size: 13px;
-      line-height: 1.45;
-      padding: 20px;
-    }
-    .header-banner {
-      background: linear-gradient(135deg, #870530 0%, #A3073B 100%);
-      color: #FFFFFF;
-      padding: 20px 24px;
-      border-radius: 16px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 24px;
-      box-shadow: 0 4px 12px rgba(163, 7, 59, 0.15);
-    }
-    .brand-title {
-      font-size: 22px;
-      font-weight: 800;
-      letter-spacing: -0.5px;
-    }
-    .brand-sub {
-      font-size: 11px;
-      color: rgba(255, 255, 255, 0.9);
-      margin-top: 3px;
-    }
-    .header-badge {
-      background: #FFFFFF;
-      color: #A3073B;
-      padding: 6px 14px;
-      border-radius: 20px;
-      font-size: 10px;
-      font-weight: 800;
-      letter-spacing: 0.5px;
-      text-transform: uppercase;
-    }
-    .doc-meta {
-      margin-bottom: 20px;
-    }
-    .doc-title {
-      font-size: 16px;
-      font-weight: 800;
-      color: #0F172A;
-    }
-    .doc-subtitle {
-      font-size: 11px;
-      color: #64748B;
-      margin-top: 4px;
-    }
-    .patient-card {
-      background: #F8FAFC;
-      border: 1px solid #E2E8F0;
-      border-radius: 14px;
-      padding: 16px 20px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 20px;
-    }
-    .patient-label {
-      font-size: 10px;
-      font-weight: 800;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      color: #A3073B;
-    }
-    .patient-name {
-      font-size: 15px;
-      font-weight: 700;
-      color: #0F172A;
-      margin-top: 2px;
-    }
-    .patient-doc {
-      font-size: 12px;
-      color: #475569;
-      margin-top: 2px;
-    }
-    .status-badge {
-      background: ${badgeBg};
-      color: ${badgeColor};
-      border: 1px solid ${badgeBorder};
-      padding: 6px 16px;
-      border-radius: 12px;
-      font-size: 11px;
-      font-weight: 700;
-      text-align: center;
-    }
-    .section-title {
-      font-size: 12px;
-      font-weight: 800;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      color: #334155;
-      margin-bottom: 10px;
-    }
-    .details-grid {
-      background: #FFFFFF;
-      border: 1px solid #E2E8F0;
-      border-radius: 14px;
-      padding: 18px 20px;
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 16px 24px;
-      margin-bottom: 20px;
-    }
-    .item-label {
-      font-size: 10px;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      color: #64748B;
-    }
-    .item-value {
-      font-size: 13px;
-      font-weight: 700;
-      color: #0F172A;
-      margin-top: 2px;
-    }
-    .clinical-box {
-      background: #F8FAFC;
-      border: 1px solid #E2E8F0;
-      border-radius: 14px;
-      padding: 16px 20px;
-      margin-bottom: 20px;
-    }
-    .instructions-box {
-      background: #FFF1F2;
-      border: 1px solid #FFE4E6;
-      border-radius: 14px;
-      padding: 16px 20px;
-      margin-bottom: 24px;
-    }
-    .signatures {
-      display: flex;
-      justify-content: space-between;
-      margin-top: 45px;
-      padding: 0 20px;
-    }
-    .signature-block {
-      text-align: center;
-      width: 200px;
-    }
-    .sig-line {
-      border-top: 1px solid #CBD5E1;
-      margin-bottom: 8px;
-    }
-    .sig-name {
-      font-size: 11px;
-      font-weight: 700;
-      color: #0F172A;
-    }
-    .sig-role {
-      font-size: 10px;
-      color: #64748B;
-    }
-    .footer {
-      margin-top: 40px;
-      text-align: center;
-      font-size: 10px;
-      color: #94A3B8;
-      border-top: 1px solid #F1F5F9;
-      padding-top: 12px;
-    }
-    @media print {
-      body {
-        padding: 0;
-      }
-      .no-print {
-        display: none;
-      }
-    }
-  </style>
-</head>
-<body>
-  <div class="header-banner">
-    <div>
-      <div class="brand-title">MEDIHEALTH PLUS</div>
-      <div class="brand-sub">Sistema Hospitalario y Gestión Inteligente de Citas Médicas</div>
-    </div>
-    <div class="header-badge">${isCompleted ? 'Constancia Oficial' : 'Comprobante Oficial'}</div>
-  </div>
+  page.drawText(mainTitle, {
+    x: 40,
+    y: pageHeight - 105,
+    size: 14,
+    font: fontBold,
+    color: slateDark,
+  });
 
-  <div class="doc-meta">
-    <div class="doc-title">${docTitle}</div>
-    <div class="doc-subtitle">Expediente No: MH-${String(appointment.id).padStart(6, '0')} • Expedido el: ${formatDisplayDate(new Date().toISOString().split('T')[0])}</div>
-  </div>
+  const subMeta = `Expediente Digital No: MH-${String(appointment.id).padStart(6, '0')}  |  Fecha de expedición: ${formatDisplayDate(new Date().toISOString().split('T')[0])}`;
+  page.drawText(subMeta, {
+    x: 40,
+    y: pageHeight - 120,
+    size: 8.5,
+    font: fontRegular,
+    color: slateMuted,
+  });
 
-  <div class="patient-card">
-    <div>
-      <div class="patient-label">Paciente Afiliado</div>
-      <div class="patient-name">${appointment.patientName}</div>
-      <div class="patient-doc">Identificación: ${appointment.patientDocument || 'Afiliado activo institucional'}</div>
-    </div>
-    <div class="status-badge">${badgeLabel}</div>
-  </div>
+  // 3. Patient Information Card
+  const patientCardY = pageHeight - 188;
+  const cardWidth = pageWidth - 80;
+  page.drawRectangle({
+    x: 40,
+    y: patientCardY,
+    width: cardWidth,
+    height: 56,
+    color: bgLight,
+    borderColor: borderLight,
+    borderWidth: 1,
+  });
 
-  <div class="section-title">Detalles de la Consulta Médica</div>
-  <div class="details-grid">
-    <div>
-      <div class="item-label">Profesional Tratante</div>
-      <div class="item-value">${cleanProfessionalName(appointment.doctorName)}</div>
-    </div>
-    <div>
-      <div class="item-label">Especialidad</div>
-      <div class="item-value">${appointment.doctorSpecialty}</div>
-    </div>
-    <div>
-      <div class="item-label">Fecha y Horario</div>
-      <div class="item-value">${formatDisplayDate(appointment.date)} a las ${appointment.time}</div>
-    </div>
-    <div>
-      <div class="item-label">Sede y Ubicación</div>
-      <div class="item-value">${appointment.location || 'Sede Principal'} (${appointment.room || 'Consultorio General'})</div>
-    </div>
-    <div>
-      <div class="item-label">Modalidad</div>
-      <div class="item-value">${appointment.type === 'virtual' ? 'Teleconsulta Virtual' : 'Presencial Institucional'}</div>
-    </div>
-    <div>
-      <div class="item-label">Motivo Registrado</div>
-      <div class="item-value">${appointment.reason || 'Consulta médica general'}</div>
-    </div>
-  </div>
+  page.drawText('DATOS DEL PACIENTE AFILIADO', {
+    x: 55,
+    y: patientCardY + 40,
+    size: 8,
+    font: fontBold,
+    color: winePrimary,
+  });
 
-  ${
-    isCompleted && appointment.prescription
-      ? `
-  <div class="section-title">Registro Clínico y Diagnóstico</div>
-  <div class="clinical-box">
-    <div class="item-label" style="color: #A3073B;">Diagnóstico Médico</div>
-    <div style="font-size: 13px; color: #0F172A; margin: 4px 0 10px 0;">${appointment.prescription.diagnosis || 'Atención completada con normalidad.'}</div>
-    <div class="item-label" style="color: #A3073B;">Indicaciones y Conducta Médica</div>
-    <div style="font-size: 12px; color: #334155; margin-top: 4px;">${appointment.prescription.notes || 'Seguimiento según evolución del paciente.'}</div>
-  </div>
-  `
-      : `
-  <div class="instructions-box">
-    <div style="font-size: 11px; font-weight: 800; color: #A3073B; text-transform: uppercase; margin-bottom: 6px;">Indicaciones Importantes para el Paciente</div>
-    <ul style="padding-left: 18px; font-size: 11px; color: #475569; line-height: 1.6;">
-      <li>Presentarse con 15 minutos de anticipación al horario asignado.</li>
-      <li>Portar su documento de identidad original para el ingreso institucional.</li>
-      <li>Puede reprogramar o cancelar su cita desde el portal con anticipación.</li>
-    </ul>
-  </div>
-  `
+  page.drawText(appointment.patientName, {
+    x: 55,
+    y: patientCardY + 24,
+    size: 12,
+    font: fontBold,
+    color: slateDark,
+  });
+
+  page.drawText(`Identificación: ${appointment.patientDocument || 'Afiliado activo institucional'}`, {
+    x: 55,
+    y: patientCardY + 11,
+    size: 9,
+    font: fontRegular,
+    color: slateText,
+  });
+
+  // Status Badge inside patient card
+  const badgeWidth = 140;
+  const badgeHeight = 24;
+  page.drawRectangle({
+    x: pageWidth - 40 - badgeWidth - 15,
+    y: patientCardY + 16,
+    width: badgeWidth,
+    height: badgeHeight,
+    color: isCompleted ? emeraldBg : bgLight,
+    borderColor: isCompleted ? emeraldBorder : borderLight,
+    borderWidth: 1,
+  });
+
+  page.drawText(isCompleted ? 'ATENDIDA / CUMPLIDA' : 'RESERVA CONFIRMADA', {
+    x: pageWidth - 40 - badgeWidth - 3,
+    y: patientCardY + 24,
+    size: 8,
+    font: fontBold,
+    color: isCompleted ? emeraldText : slateDark,
+  });
+
+  // 4. Consultation Details Section
+  page.drawText('INFORMACIÓN DE LA CONSULTA MÉDICA', {
+    x: 40,
+    y: pageHeight - 212,
+    size: 10.5,
+    font: fontBold,
+    color: slateDark,
+  });
+
+  const detailsY = pageHeight - 335;
+  page.drawRectangle({
+    x: 40,
+    y: detailsY,
+    width: cardWidth,
+    height: 110,
+    color: white,
+    borderColor: borderLight,
+    borderWidth: 1,
+  });
+
+  const col1X = 55;
+  const col2X = 310;
+
+  // Row 1
+  page.drawText('MÉDICO TRATANTE', { x: col1X, y: detailsY + 92, size: 7.5, font: fontBold, color: slateMuted });
+  page.drawText(cleanProfessionalName(appointment.doctorName), { x: col1X, y: detailsY + 78, size: 10, font: fontBold, color: slateDark });
+
+  page.drawText('ESPECIALIDAD MÉDICA', { x: col2X, y: detailsY + 92, size: 7.5, font: fontBold, color: slateMuted });
+  page.drawText(appointment.doctorSpecialty, { x: col2X, y: detailsY + 78, size: 10, font: fontBold, color: slateDark });
+
+  // Row 2
+  page.drawText('FECHA Y HORA PROGRAMADA', { x: col1X, y: detailsY + 56, size: 7.5, font: fontBold, color: slateMuted });
+  page.drawText(`${formatDisplayDate(appointment.date)} a las ${appointment.time}`, { x: col1X, y: detailsY + 42, size: 9.5, font: fontBold, color: slateDark });
+
+  page.drawText('SEDE DE ATENCIÓN Y CONSULTORIO', { x: col2X, y: detailsY + 56, size: 7.5, font: fontBold, color: slateMuted });
+  page.drawText(`${appointment.location || 'Sede Principal'} (${appointment.room || 'Consultorio General'})`, { x: col2X, y: detailsY + 42, size: 9, font: fontBold, color: slateDark });
+
+  // Row 3
+  page.drawText('MODALIDAD DE ATENCIÓN', { x: col1X, y: detailsY + 20, size: 7.5, font: fontBold, color: slateMuted });
+  page.drawText(appointment.type === 'virtual' ? 'Teleconsulta Virtual' : 'Presencial Institucional', { x: col1X, y: detailsY + 8, size: 9, font: fontBold, color: slateDark });
+
+  page.drawText('MOTIVO / ASUNTO REGISTRADO', { x: col2X, y: detailsY + 20, size: 7.5, font: fontBold, color: slateMuted });
+  page.drawText(appointment.reason || 'Consulta médica asistencial', { x: col2X, y: detailsY + 8, size: 9, font: fontBold, color: slateDark });
+
+  // 5. Clinical Findings / Indications
+  if (isCompleted && appointment.prescription) {
+    page.drawText('REGISTRO CLÍNICO Y DIAGNÓSTICO', {
+      x: 40,
+      y: pageHeight - 358,
+      size: 10.5,
+      font: fontBold,
+      color: slateDark,
+    });
+
+    const clinicY = pageHeight - 450;
+    page.drawRectangle({
+      x: 40,
+      y: clinicY,
+      width: cardWidth,
+      height: 80,
+      color: bgLight,
+      borderColor: borderLight,
+      borderWidth: 1,
+    });
+
+    page.drawText('DIAGNÓSTICO MÉDICO:', { x: col1X, y: clinicY + 62, size: 8, font: fontBold, color: winePrimary });
+    page.drawText(appointment.prescription.diagnosis || 'Atención completada con normalidad.', { x: col1X, y: clinicY + 48, size: 9.5, font: fontBold, color: slateDark });
+
+    page.drawText('INDICACIONES Y CONDUCTA MÉDICA:', { x: col1X, y: clinicY + 30, size: 8, font: fontBold, color: winePrimary });
+    page.drawText(appointment.prescription.notes || 'Seguimiento según evolución del paciente.', { x: col1X, y: clinicY + 16, size: 9, font: fontRegular, color: slateText });
+  } else {
+    page.drawText('INDICACIONES IMPORTANTES PARA EL PACIENTE', {
+      x: 40,
+      y: pageHeight - 358,
+      size: 10.5,
+      font: fontBold,
+      color: slateDark,
+    });
+
+    const instructY = pageHeight - 435;
+    page.drawRectangle({
+      x: 40,
+      y: instructY,
+      width: cardWidth,
+      height: 65,
+      color: roseBg,
+      borderColor: roseBorder,
+      borderWidth: 1,
+    });
+
+    page.drawText('• Presentarse 15 minutos antes de la hora programada en la sede.', { x: col1X, y: instructY + 44, size: 8.5, font: fontRegular, color: slateText });
+    page.drawText('• Portar su documento de identidad original para el ingreso.', { x: col1X, y: instructY + 28, size: 8.5, font: fontRegular, color: slateText });
+    page.drawText('• Puede reprogramar o cancelar su cita con anticipación desde el portal.', { x: col1X, y: instructY + 12, size: 8.5, font: fontRegular, color: slateText });
   }
 
-  <div class="signatures">
-    <div class="signature-block">
-      <div class="sig-line"></div>
-      <div class="sig-name">${cleanProfessionalName(appointment.doctorName)}</div>
-      <div class="sig-role">Firma y Registro Médico Digital</div>
-    </div>
-    <div class="signature-block">
-      <div class="sig-line"></div>
-      <div class="sig-name">MediHealth Plus IPS</div>
-      <div class="sig-role">Certificación y Validación Digital</div>
-    </div>
-  </div>
+  // 6. Signatures and Verification
+  const sigY = pageHeight - 510;
+  page.drawLine({ start: { x: 55, y: sigY }, end: { x: 230, y: sigY }, color: borderLight, thickness: 1 });
+  page.drawLine({ start: { x: 360, y: sigY }, end: { x: 535, y: sigY }, color: borderLight, thickness: 1 });
 
-  <div class="footer">
-    MediHealth Plus IPS • Documento electrónico expedido con firma y registro asistencial digital.<br />
-    Línea nacional gratuita: 01 8000 900 100 • www.medihealthplus.com
-  </div>
+  page.drawText(cleanProfessionalName(appointment.doctorName), { x: 55, y: sigY - 14, size: 9, font: fontBold, color: slateDark });
+  page.drawText('Firma y Registro Médico Digital', { x: 55, y: sigY - 26, size: 8, font: fontRegular, color: slateMuted });
 
-  <script>
-    window.onload = function() {
-      window.print();
-    };
-  </script>
-</body>
-</html>
-`;
+  page.drawText('MediHealth Plus IPS', { x: 360, y: sigY - 14, size: 9, font: fontBold, color: slateDark });
+  page.drawText('Certificación y Validación Digital', { x: 360, y: sigY - 26, size: 8, font: fontRegular, color: slateMuted });
 
-  const printWindow = window.open('', '_blank');
-  if (printWindow) {
-    printWindow.document.open();
-    printWindow.document.write(htmlContent);
-    printWindow.document.close();
+  // 7. Footer Bar
+  page.drawRectangle({
+    x: 0,
+    y: 0,
+    width: pageWidth,
+    height: 38,
+    color: slateDark,
+  });
+
+  page.drawText('MediHealth Plus IPS • Documento electrónico expedido con firma y registro asistencial digital.', {
+    x: 65,
+    y: 22,
+    size: 7.5,
+    font: fontRegular,
+    color: white,
+  });
+
+  page.drawText('Línea nacional gratuita: 01 8000 900 100 • www.medihealthplus.com', {
+    x: 155,
+    y: 11,
+    size: 7.5,
+    font: fontRegular,
+    color: white,
+  });
+
+  // Direct Browser Download via Blob (No new windows, no popups, no print dialogs!)
+  const pdfBytes = await doc.save();
+  const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+  const filename = isCompleted
+    ? `constancia-asistencia-${appointment.id}.pdf`
+    : `comprobante-cita-${appointment.id}.pdf`;
+
+  if (typeof window !== 'undefined' && typeof window.URL?.createObjectURL === 'function') {
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    if (typeof window.URL?.revokeObjectURL === 'function') {
+      window.URL.revokeObjectURL(url);
+    }
   }
 };

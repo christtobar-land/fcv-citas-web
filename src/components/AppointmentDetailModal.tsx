@@ -158,10 +158,10 @@ export const AppointmentDetailModal: React.FC<AppointmentDetailModalProps> = ({
   const isCompleted = appointment.status === 'completada';
   const downloadText = isCompleted ? 'Constancia Asistencia' : 'Comprobante Cita';
 
-  const handleDownloadProof = () => {
+  const handleDownloadProof = async () => {
     setIsDownloading(true);
     try {
-      generateAppointmentPdf(appointment);
+      await generateAppointmentPdf(appointment);
     } catch (err) {
       console.error('Error generando PDF de cita:', err);
     } finally {
