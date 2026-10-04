@@ -39,8 +39,38 @@ export const generateAppointmentPdf = async (appointment: Appointment): Promise<
     color: winePrimary,
   });
 
+  let logoDrawn = false;
+  try {
+    const logoResponse = await fetch('/logo.png');
+    if (logoResponse.ok) {
+      const logoBytes = await logoResponse.arrayBuffer();
+      const logoImage = await doc.embedPng(logoBytes);
+      
+      // Fondo contenedor blanco para resaltar el logo
+      page.drawRectangle({
+        x: 40,
+        y: pageHeight - bannerHeight + 12,
+        width: 48,
+        height: 48,
+        color: white,
+      });
+
+      page.drawImage(logoImage, {
+        x: 44,
+        y: pageHeight - bannerHeight + 16,
+        width: 40,
+        height: 40,
+      });
+      logoDrawn = true;
+    }
+  } catch (err) {
+    console.warn('No se pudo cargar el logo para el PDF, continuando con layout texto:', err);
+  }
+
+  const textStartX = logoDrawn ? 100 : 40;
+
   page.drawText('MEDIHEALTH PLUS', {
-    x: 40,
+    x: textStartX,
     y: pageHeight - 38,
     size: 20,
     font: fontBold,
@@ -48,7 +78,7 @@ export const generateAppointmentPdf = async (appointment: Appointment): Promise<
   });
 
   page.drawText('Sistema Hospitalario y Gestión Inteligente de Citas Médicas', {
-    x: 40,
+    x: textStartX,
     y: pageHeight - 54,
     size: 9.5,
     font: fontRegular,

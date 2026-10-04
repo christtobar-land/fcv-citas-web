@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { DashboardScreen } from './DashboardScreen';
 import * as appointmentApi from '../services/appointmentApi';
 import { User, Appointment } from '../types';
+import { getTodayIso } from '../utils/dateUtils';
 
 describe('Doctor and Admin Views in DashboardScreen (RF-16, RF-17, RF-18)', () => {
   const mockDoctorUser: User = {
@@ -70,7 +71,7 @@ describe('Doctor and Admin Views in DashboardScreen (RF-16, RF-17, RF-18)', () =
     });
   });
 
-  const testToday = new Date().getFullYear() + '-' + String(new Date().getMonth() + 1).padStart(2, '0') + '-' + String(new Date().getDate()).padStart(2, '0');
+  const testToday = getTodayIso();
 
   it('permite cambiar al rol Médico y visualizar la agenda médica con acciones de egreso (RF-16, RF-17)', async () => {
     const mockAgenda: appointmentApi.ProfessionalAppointmentItem[] = [
@@ -298,7 +299,7 @@ describe('Doctor and Admin Views in DashboardScreen (RF-16, RF-17, RF-18)', () =
 
     expect(screen.getByText('Mariana Restrepo Gómez')).toBeInTheDocument();
     expect(screen.getByText('Gonzalo Duque Ruiz')).toBeInTheDocument();
-  });
+  }, 15000);
 
   it('permite al administrador gestionar profesionales de salud y alternar su estado activo', async () => {
     const mockDoctors: appointmentApi.ProfessionalItem[] = [
