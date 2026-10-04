@@ -400,10 +400,6 @@ export default function App() {
         isOpen={Boolean(detailAppointmentData)}
         appointment={detailAppointmentData}
         onClose={() => setDetailAppointmentData(null)}
-        onOpenReschedule={(apt) => {
-          setDetailAppointmentData(null);
-          setRescheduleAppointmentData(apt);
-        }}
       />
 
       {/* Past History Modal */}

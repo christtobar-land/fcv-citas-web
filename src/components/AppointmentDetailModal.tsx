@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Calendar, Clock, Download, FileText, Pill, History, UserCheck, ShieldCheck, Cpu, MapPin, RotateCcw } from 'lucide-react';
+import { X, Calendar, Clock, Download, FileText, Pill, History, UserCheck, ShieldCheck, Cpu, MapPin } from 'lucide-react';
 import { Appointment } from '../types';
 import { getSpecialtyIcon } from '../utils/specialtyIcons';
 import { fetchAppointmentHistory, AppointmentHistoryItem } from '../services/appointmentApi';
@@ -10,7 +10,6 @@ interface AppointmentDetailModalProps {
   isOpen?: boolean;
   appointment: Appointment | null;
   onClose: () => void;
-  onOpenReschedule?: (appointment: Appointment) => void;
   // Propiedades opcionales para retrocompatibilidad con tests existentes
   initialMode?: 'detail' | 'reschedule';
   onCancelAppointment?: (id: string, reason?: string) => void;
@@ -27,7 +26,6 @@ export const AppointmentDetailModal: React.FC<AppointmentDetailModalProps> = ({
   isOpen = true,
   appointment,
   onClose,
-  onOpenReschedule,
 }) => {
   const [isDownloading, setIsDownloading] = useState(false);
   const [history, setHistory] = useState<AppointmentHistoryItem[]>([]);
@@ -434,7 +432,7 @@ Constancia médica generada con firma y registro asistencial digital.`;
         </div>
 
         {/* Modal Footer */}
-        <div className="p-4 sm:p-5 border-t border-slate-100 flex items-center justify-between gap-2 bg-white flex-wrap">
+        <div className="p-4 sm:p-5 border-t border-slate-100 flex items-center justify-between bg-white">
           <button
             type="button"
             onClick={handleDownloadProof}
@@ -445,29 +443,13 @@ Constancia médica generada con firma y registro asistencial digital.`;
             <span>{isDownloading ? 'Generando...' : 'Descargar Constancia'}</span>
           </button>
 
-          <div className="flex items-center gap-2">
-            {onOpenReschedule && !appointment.isTerminal && appointment.status !== 'cancelada' && appointment.status !== 'completada' && (
-              <button
-                type="button"
-                onClick={() => {
-                  onClose();
-                  onOpenReschedule(appointment);
-                }}
-                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold text-white bg-[#A3073B] hover:bg-[#870530] transition cursor-pointer shadow-xs"
-              >
-                <RotateCcw className="w-3.5 h-3.5" />
-                <span>Reprogramar Cita</span>
-              </button>
-            )}
-
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-4.5 py-2 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100 transition cursor-pointer"
-            >
-              Cerrar
-            </button>
-          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="px-4.5 py-2 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100 transition cursor-pointer"
+          >
+            Cerrar
+          </button>
         </div>
 
       </div>
